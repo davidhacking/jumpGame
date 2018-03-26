@@ -70,6 +70,8 @@ public class GameCtrl : MonoBehaviour
 	float playAgainTime = 1.5f;
 	float playDeltaTime = 0;
 
+	int extraBonus = 0;
+
 	enum GameStatus {
 		INIT,
 		CREATE_PLATFORM,
@@ -230,6 +232,7 @@ public class GameCtrl : MonoBehaviour
 	void initGame() {
 		isShowRecord = false;
 		setRecondDisable();
+		extraBonus = 0;
 		score = 0;
 		sentScore = false;
 		animationScore = 0;
@@ -261,6 +264,13 @@ public class GameCtrl : MonoBehaviour
 
 		direction = nextDirection();
 		NextPlatform = Instantiate (Platform, PrePlatform.transform.position + randomDelta(), Quaternion.Euler (Vector3.zero));
+
+		// render color
+		if (extraBonus > 0) {
+			Material materialColored = new Material(Shader.Find("Diffuse"));
+	        materialColored.color = extraBonus == 1 ? Color.green : Color.yellow;
+	        NextPlatform.GetComponent<Renderer>().material = materialColored;
+	    }
 
 		Platforms.Insert (Platforms.Count, NextPlatform);
 
@@ -416,15 +426,19 @@ public class GameCtrl : MonoBehaviour
 						gameStatus = GameStatus.GAME_OVER;
 						Timer = 0;
 					} else {
-						if (Mathf.Abs (player.transform.position.x - NextPlatform.transform.position.x) < 0.1 && Mathf.Abs (player.transform.position.z - NextPlatform.transform.position.z) < 0.1) {
+						if (Mathf.Abs (player.transform.position.x - NextPlatform.transform.position.x) < 0.2 && Mathf.Abs (player.transform.position.z - NextPlatform.transform.position.z) < 0.2) {
 							playMusic(bonusAudio);
 							Bonus++;
-							score += Bonus * 2;
+							score += Bonus * 2 + extraBonus;
+							// white yellow purple
+							if (extraBonus < 2)
+								extraBonus++;
 							printScore();
 						} else {
 							playMusic(stepAudio);
 							Bonus = 0;
-							score++;
+							score = score + 1 + extraBonus;
+							extraBonus = 0;
 							printScore();
 						}
 						gameStatus = GameStatus.CREATE_PLATFORM;
