@@ -23,7 +23,6 @@ public class GameCtrl : MonoBehaviour
 	*/
 	public float Speed;
 	public GameObject Platform;
-	public GameObject NextPlatform;
 	public GameObject playerAsset;
 	public GameObject playAgainBtn;
 	public GameObject quitGameBtn;
@@ -52,14 +51,15 @@ public class GameCtrl : MonoBehaviour
 	float Timer;
 	float Power;
 	float Scale;
-	float VSpeed;
 	bool IsPressing;
 	int Bonus;
 	GameStatus gameStatus;
 	bool direction;
+	// all players data struct
 	Player[] playerList;
-	GameObject PrePlatform;
-	List<GameObject> Platforms;
+	// 当前玩家的索引号
+	int THIS_PLAYER_INDEX = 0;
+	List<GameObject> platforms;
 	CameraCtrl cameraCtrl;
 	int score;
 	bool sentScore;
@@ -96,6 +96,8 @@ public class GameCtrl : MonoBehaviour
 		public TextMesh playerLabelTextMesh;
 		public GameObject playerPos;
 		public Vector3 prePlayerPosition;
+		public float VSpeed;
+		public int currentPlatformIndex;
 	};
 
 	public void clearPlayer(Player[] playerList) {
@@ -127,13 +129,14 @@ public class GameCtrl : MonoBehaviour
 			playerList[i].playerLabel.AddComponent<MeshRenderer>();
 			playerList[i].playerLabel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
 			playerList[i].playerLabelTextMesh.text = "Id: " + i;
+			playerList[i].currentPlatformIndex = 0;
 		}
 		return playerList;
 	}
 
 	void displayPlayerLabel(int index, string text) {
 		setEnable(index);
-		playerList[index].playerLabel.transform.position = playerList[index].player.transform.position + new Vector3(0, playerList[index].player.transform.position.y + 0.8f, 0);
+		playerList[index].playerLabel.transform.position = playerList[index].player.transform.position + new Vector3(0, playerList[index].player.transform.position.y + 0.4f * index, 0);
 		playerList[index].playerLabelTextMesh.text = text;
 	}
 
@@ -145,52 +148,71 @@ public class GameCtrl : MonoBehaviour
 		playerList[index].playerLabel.SetActive(true);
 	}
 
+	GameObject nextPlatform(int index) {
+		return platforms[playerList[index].currentPlatformIndex + 1];
+	}
+
+	GameObject currPlatform(int index) {
+		print("playerList[index].currentPlatformIndex: " + playerList[index].currentPlatformIndex);
+		return platforms[playerList[index].currentPlatformIndex];
+	}
+
 	void playerJump(int index) {
 		setDisable(index);
-		VSpeed -= Time.deltaTime;
-		print("direction: " + direction);
+		playerList[index].VSpeed -= Time.deltaTime;
+		print("index: " + index + "; direction: " + direction);
 		if (direction) {
-			playerList[index].player.transform.Translate (new Vector3 ((NextPlatform.transform.position.x - playerList[index].prePlayerPosition.x) / 0.6f * Time.deltaTime, VSpeed / 2, Power / 0.6f * Time.deltaTime));
-			playerList[index].playerPos.transform.Rotate (new Vector3 (720 * Time.deltaTime, 0));
+			playerList[index].player.transform.Translate(new Vector3((nextPlatform(index).transform.position.x - playerList[index].prePlayerPosition.x) / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, Power / 0.6f * Time.deltaTime));
+			playerList[index].playerPos.transform.Rotate(new Vector3(720 * Time.deltaTime, 0));
 		} else {
-			playerList[index].player.transform.Translate (new Vector3 (-Power / 0.6f * Time.deltaTime, VSpeed / 2, (NextPlatform.transform.position.z - playerList[index].prePlayerPosition.z) / 0.6f * Time.deltaTime));
-			playerList[index].playerPos.transform.Rotate (new Vector3 (0, 0, 720 * Time.deltaTime));
+			playerList[index].player.transform.Translate(new Vector3(-Power / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, (nextPlatform(index).transform.position.z - playerList[index].prePlayerPosition.z) / 0.6f * Time.deltaTime));
+			playerList[index].playerPos.transform.Rotate(new Vector3(0, 0, 720 * Time.deltaTime));
 		}
 		if (playerList[index].player.transform.position.y <= 1) {
 			if (!direction) {
-				playerList[index].player.transform.position = new Vector3 (playerList[index].player.transform.position.x, 1.25f, randomPos(NextPlatform.transform.position.z, index));
+				playerList[index].player.transform.position = new Vector3 (playerList[index].player.transform.position.x, 1.25f, randomPos(nextPlatform(index).transform.position.z, index));
 			} else {
-				playerList[index].player.transform.position = new Vector3 (randomPos(NextPlatform.transform.position.x, index), 1.25f, playerList[index].player.transform.position.z);
+				playerList[index].player.transform.position = new Vector3 (randomPos(nextPlatform(index).transform.position.x, index), 1.25f, playerList[index].player.transform.position.z);
 			}
 			playerList[index].playerPos.transform.rotation = Quaternion.Euler (0, 0, 0);
-			if (Mathf.Abs(playerList[index].player.transform.position.x - PrePlatform.transform.position.x) < 0.5 && Mathf.Abs (playerList[index].player.transform.position.z - PrePlatform.transform.position.z) < 0.5) {
+			if (Mathf.Abs(playerList[index].player.transform.position.x - currPlatform(index).transform.position.x) < 0.5 && Mathf.Abs (playerList[index].player.transform.position.z - currPlatform(index).transform.position.z) < 0.5) {
 				gameStatus = GameStatus.TAPING;
 			} else {
-				if (Mathf.Abs(playerList[index].player.transform.position.x - NextPlatform.transform.position.x) > 0.5 || Mathf.Abs (playerList[index].player.transform.position.z - NextPlatform.transform.position.z) > 0.5) {
+				if (Mathf.Abs(playerList[index].player.transform.position.x - nextPlatform(index).transform.position.x) > 0.5 || Mathf.Abs (playerList[index].player.transform.position.z - nextPlatform(index).transform.position.z) > 0.5) {
 					playMusic(deadAudio);
 					gameStatus = GameStatus.GAME_OVER;
-					Timer = 0;
-				} else {
-					if (Mathf.Abs(playerList[index].player.transform.position.x - NextPlatform.transform.position.x) < 0.2 && Mathf.Abs(playerList[index].player.transform.position.z - NextPlatform.transform.position.z) < 0.2) {
-						playMusic(bonusAudio);
-						Bonus++;
-						score += Bonus * 2 + extraBonus;
-						// white yellow purple
-						if (extraBonus < 2)
-							extraBonus++;
-						printScore();
-					} else {
-						playMusic(stepAudio);
-						Bonus = 0;
-						score = score + 1 + extraBonus;
-						extraBonus = 0;
-						printScore();
+					if (index == THIS_PLAYER_INDEX) {
+						Timer = 0;
 					}
-					gameStatus = GameStatus.CREATE_PLATFORM;
+				} else {
+					if (index == THIS_PLAYER_INDEX) {
+						if (Mathf.Abs(playerList[index].player.transform.position.x - nextPlatform(index).transform.position.x) < 0.2 && Mathf.Abs(playerList[index].player.transform.position.z - nextPlatform(index).transform.position.z) < 0.2) {
+							playMusic(bonusAudio);
+							Bonus++;
+							score += Bonus * 2 + extraBonus;
+							// white yellow purple
+							if (extraBonus < 2)
+								extraBonus++;
+							printScore();
+						} else {
+							playMusic(stepAudio);
+							Bonus = 0;
+							score = score + 1 + extraBonus;
+							extraBonus = 0;
+							printScore();
+						}
+						gameStatus = GameStatus.CREATE_PLATFORM;
+					}
+					// 当前platform+1
+					playerList[index].currentPlatformIndex++;
 				}
 			}
 			displayPlayerLabel(index, "jump");
 		}
+	}
+
+	public void syncAnimation() {
+
 	}
 
     public void onBackBtnClick() {
@@ -322,7 +344,7 @@ public class GameCtrl : MonoBehaviour
 		quitGameBtn.SetActive(false);
 		historyBtn.SetActive(false);
 		cameraCtrl = GetComponent<CameraCtrl>();
-		Platforms = new List<GameObject>();
+		platforms = new List<GameObject>();
 		scoretext = scoretext.GetComponent<Text>();
 		IsPressing = false;
 		Bonus = 0;
@@ -343,14 +365,16 @@ public class GameCtrl : MonoBehaviour
 		playDeltaTime = 0;
 		Bonus = 0;
 		printScore();
-		foreach (GameObject current in Platforms) {
-			Destroy(current);
+		if (platforms != null) {
+			foreach (GameObject current in platforms) {
+				Destroy(current);
+			}
 		}
+		platforms = new List<GameObject>();
 		clearPlayer(playerList);
 		playerList = newPlayerList(2);
 		Vector3 position = new Vector3 (0, 0.52f, 0);
-		NextPlatform = Instantiate(Platform, position, Quaternion.Euler (Vector3.zero));
-		Platforms.Add(NextPlatform);
+		platforms.Add(Instantiate(Platform, position, Quaternion.Euler (Vector3.zero)));
 		gameStatus = GameStatus.CREATE_PLATFORM;
 	}
 
@@ -368,26 +392,21 @@ public class GameCtrl : MonoBehaviour
 	}
 
 	void createPlatform() {
-		PrePlatform = NextPlatform;
-
 		direction = nextDirection();
-		NextPlatform = Instantiate (Platform, PrePlatform.transform.position + randomDelta(), Quaternion.Euler (Vector3.zero));
-
+		platforms.Insert(platforms.Count, Instantiate(Platform, currPlatform(0).transform.position + randomDelta(), Quaternion.Euler (Vector3.zero)));
 		// render color
 		if (extraBonus > 0) {
 			Material materialColored = new Material(Shader.Find("Diffuse"));
 	        materialColored.color = extraBonus == 1 ? Color.green : Color.yellow;
-	        NextPlatform.GetComponent<Renderer>().material = materialColored;
+	        nextPlatform(0).GetComponent<Renderer>().material = materialColored;
 	    }
 
-		Platforms.Insert (Platforms.Count, NextPlatform);
-
-		Point1 = NextPlatform.transform.position;
+		Point1 = nextPlatform(0).transform.position;
 		Point2 = Point1;
 		Point2.y = 0.5f;
 
         //重新设置相机的位置
-		cameraCtrl.SetPosition ((PrePlatform.transform.position + Point2) / 2);
+		cameraCtrl.SetPosition ((currPlatform(0).transform.position + Point2) / 2);
 
 		Timer = 0;
 		gameStatus = GameStatus.SHOW_PLATFORM;
@@ -452,6 +471,8 @@ public class GameCtrl : MonoBehaviour
 			return;
 		}
 
+		syncAnimation();
+
 		//print("current status: " + gameStatus);
 		switch (gameStatus) {
 		case GameStatus.INIT:
@@ -465,7 +486,7 @@ public class GameCtrl : MonoBehaviour
 		case GameStatus.SHOW_PLATFORM:
                 
 			Timer += Time.deltaTime;
-			NextPlatform.transform.position = Vector3.Lerp (Point1, Point2, Timer * Speed);
+			nextPlatform(0).transform.position = Vector3.Lerp(Point1, Point2, Timer * Speed);
 
 			if (Timer * Speed > 1) {
 				gameStatus = GameStatus.TAPING;
@@ -483,35 +504,35 @@ public class GameCtrl : MonoBehaviour
 					Timer += Time.deltaTime;
 					if (Timer < 4) {
 						Power = Timer * 3;
-						PrePlatform.transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
-						PrePlatform.transform.Translate (0, -0.1f * Time.deltaTime, 0);
-						playerList[0].player.transform.Translate (0, -0.2f * Time.deltaTime, 0);
+						currPlatform(0).transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
+						currPlatform(0).transform.Translate (0, -0.1f * Time.deltaTime, 0);
+						playerList[THIS_PLAYER_INDEX].player.transform.Translate (0, -0.2f * Time.deltaTime, 0);
 					}
 				} else {
 					stopMusic(pressingAudio);
 					IsPressing = false;
 					gameStatus = GameStatus.REBOUND;
-					Scale = PrePlatform.transform.localScale.y;
+					Scale = currPlatform(0).transform.localScale.y;
 				}
 			}
 			break;
 
 		case GameStatus.REBOUND:
 			Timer += Time.deltaTime;
-			PrePlatform.transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
-			PrePlatform.transform.Translate (0, 0.5f * Time.deltaTime, 0);
-			playerList[0].player.transform.Translate (0, 1.0f * Time.deltaTime, 0);
+			currPlatform(0).transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
+			currPlatform(0).transform.Translate (0, 0.5f * Time.deltaTime, 0);
+			playerList[THIS_PLAYER_INDEX].player.transform.Translate (0, 1.0f * Time.deltaTime, 0);
 
-			if (PrePlatform.transform.position.y >= 0.5) {
+			if (currPlatform(0).transform.position.y >= 0.5) {
 				gameStatus = GameStatus.PLAYER_JUMPING;
-				VSpeed = 0.3f;
-				playerList[0].prePlayerPosition = playerList[0].player.transform.position;
+				playerList[THIS_PLAYER_INDEX].VSpeed = 0.3f;
+				playerList[THIS_PLAYER_INDEX].prePlayerPosition = playerList[THIS_PLAYER_INDEX].player.transform.position;
 			}
 			// clear gameobject
-			if (Platforms.Count > 5) {
-				Platforms.RemoveAt (0);
-				Destroy ((GameObject) Platforms[0]);
-			}
+			//if (platforms.Count > 5) {
+			//	platforms.RemoveAt (0);
+			//	Destroy ((GameObject) platforms[0]);
+			//}
 			break;
 
 		case GameStatus.PLAYER_JUMPING:
@@ -520,7 +541,7 @@ public class GameCtrl : MonoBehaviour
 
 		case GameStatus.GAME_OVER:
 			if (Timer == 0) {
-				Rig = playerList[0].playerPos.AddComponent<Rigidbody> ();
+				Rig = playerList[THIS_PLAYER_INDEX].playerPos.AddComponent<Rigidbody> ();
 			}
 			Timer += Time.deltaTime;
 			if (Timer >= 1) {
