@@ -49,12 +49,10 @@ public class GameCtrl : MonoBehaviour
 	Vector3 Point1;
 	Vector3 Point2;
 	float Timer;
-	float Power;
 	float Scale;
 	bool IsPressing;
 	int Bonus;
 	GameStatus gameStatus;
-	bool direction;
 	// all players data struct
 	Player[] playerList;
 	// 当前玩家的索引号
@@ -97,7 +95,12 @@ public class GameCtrl : MonoBehaviour
 		public GameObject playerPos;
 		public Vector3 prePlayerPosition;
 		public float VSpeed;
+		public float power;
 		public int currentPlatformIndex;
+		// 决定跳的方向
+		public bool direction;
+		// 动画播放队列
+		public List<string> animationQueue;
 	};
 
 	public void clearPlayer(Player[] playerList) {
@@ -130,6 +133,7 @@ public class GameCtrl : MonoBehaviour
 			playerList[i].playerLabel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
 			playerList[i].playerLabelTextMesh.text = "Id: " + i;
 			playerList[i].currentPlatformIndex = 0;
+			playerList[i].animationQueue = new List<string>();
 		}
 		return playerList;
 	}
@@ -153,37 +157,59 @@ public class GameCtrl : MonoBehaviour
 	}
 
 	GameObject currPlatform(int index) {
-		print("playerList[index].currentPlatformIndex: " + playerList[index].currentPlatformIndex);
 		return platforms[playerList[index].currentPlatformIndex];
 	}
 
-	void playerJump(int index) {
+	void displayOtherPlayer(int index) {
+		print("index: " + index + "; playerList[index].direction: " + playerList[index].direction + "; playerList[index].direction: " + playerList[index].currentPlatformIndex);
+		if (!playerList[index].direction) {
+			playerList[index].player.transform.position = new Vector3(currPlatform(index).transform.position.x, 1.25f, randomPos(currPlatform(index).transform.position.z, index));
+		} else {
+			playerList[index].player.transform.position = new Vector3(randomPos(currPlatform(index).transform.position.x, index), 1.25f, currPlatform(index).transform.position.z);
+		}
+		playerList[index].playerPos.transform.rotation = Quaternion.Euler(0, 0, 0);
+	}
+
+	void displayPlayerInNextPlatform(int index) {
+		if (!playerList[index].direction) {
+			playerList[index].player.transform.position = new Vector3(playerList[index].player.transform.position.x, 1.25f, randomPos(nextPlatform(index).transform.position.z, index));
+		} else {
+			playerList[index].player.transform.position = new Vector3(randomPos(nextPlatform(index).transform.position.x, index), 1.25f, playerList[index].player.transform.position.z);
+		}
+		playerList[index].playerPos.transform.rotation = Quaternion.Euler(0, 0, 0);
+		// for test
+		if (index == THIS_PLAYER_INDEX) {
+			playerList[1].VSpeed = 0.3f;
+			playerList[1].direction = playerList[THIS_PLAYER_INDEX].direction;
+			playerList[1].animationQueue.Insert(playerList[1].animationQueue.Count, "jump");
+		}
+	}
+	bool playerJump(int index) {
 		setDisable(index);
 		playerList[index].VSpeed -= Time.deltaTime;
-		print("index: " + index + "; direction: " + direction);
-		if (direction) {
-			playerList[index].player.transform.Translate(new Vector3((nextPlatform(index).transform.position.x - playerList[index].prePlayerPosition.x) / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, Power / 0.6f * Time.deltaTime));
+		print("index: " + index + "; playerList[index].direction: " + playerList[index].direction);
+		if (playerList[index].direction) {
+			//playerList[index].player.transform.Translate(new Vector3((nextPlatform(index).transform.position.x - playerList[index].prePlayerPosition.x) / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, playerList[index].power / 0.6f * Time.deltaTime));
+			playerList[index].player.transform.Translate(new Vector3(0, playerList[index].VSpeed / 2, playerList[index].power / 0.6f * Time.deltaTime));
 			playerList[index].playerPos.transform.Rotate(new Vector3(720 * Time.deltaTime, 0));
 		} else {
-			playerList[index].player.transform.Translate(new Vector3(-Power / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, (nextPlatform(index).transform.position.z - playerList[index].prePlayerPosition.z) / 0.6f * Time.deltaTime));
+			//playerList[index].player.transform.Translate(new Vector3(-playerList[index].power / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, (nextPlatform(index).transform.position.z - playerList[index].prePlayerPosition.z) / 0.6f * Time.deltaTime));
+			playerList[index].player.transform.Translate(new Vector3(-playerList[index].power / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, 0));
 			playerList[index].playerPos.transform.Rotate(new Vector3(0, 0, 720 * Time.deltaTime));
 		}
 		if (playerList[index].player.transform.position.y <= 1) {
-			if (!direction) {
-				playerList[index].player.transform.position = new Vector3 (playerList[index].player.transform.position.x, 1.25f, randomPos(nextPlatform(index).transform.position.z, index));
-			} else {
-				playerList[index].player.transform.position = new Vector3 (randomPos(nextPlatform(index).transform.position.x, index), 1.25f, playerList[index].player.transform.position.z);
-			}
-			playerList[index].playerPos.transform.rotation = Quaternion.Euler (0, 0, 0);
+			displayPlayerInNextPlatform(index);
 			if (Mathf.Abs(playerList[index].player.transform.position.x - currPlatform(index).transform.position.x) < 0.5 && Mathf.Abs (playerList[index].player.transform.position.z - currPlatform(index).transform.position.z) < 0.5) {
 				gameStatus = GameStatus.TAPING;
 			} else {
 				if (Mathf.Abs(playerList[index].player.transform.position.x - nextPlatform(index).transform.position.x) > 0.5 || Mathf.Abs (playerList[index].player.transform.position.z - nextPlatform(index).transform.position.z) > 0.5) {
-					playMusic(deadAudio);
-					gameStatus = GameStatus.GAME_OVER;
 					if (index == THIS_PLAYER_INDEX) {
+						playMusic(deadAudio);
+						gameStatus = GameStatus.GAME_OVER;
 						Timer = 0;
 					}
+					// for test
+					playerList[index].animationQueue.Insert(playerList[index].animationQueue.Count, "game_over");
 				} else {
 					if (index == THIS_PLAYER_INDEX) {
 						if (Mathf.Abs(playerList[index].player.transform.position.x - nextPlatform(index).transform.position.x) < 0.2 && Mathf.Abs(playerList[index].player.transform.position.z - nextPlatform(index).transform.position.z) < 0.2) {
@@ -208,11 +234,36 @@ public class GameCtrl : MonoBehaviour
 				}
 			}
 			displayPlayerLabel(index, "jump");
+			return true;
 		}
+		return false;
 	}
 
 	public void syncAnimation() {
-
+		// other player status
+		int t = playerList[THIS_PLAYER_INDEX].currentPlatformIndex;
+		for (int i = 0; i < playerList.Length; i++) {
+			if (i == THIS_PLAYER_INDEX) {
+				continue;
+			}
+			if (playerList[i].animationQueue.Count > 0) {
+				// play jump animation
+				if (playerList[i].animationQueue[0] == "jump") {
+					bool endFlag = playerJump(i);
+					if (endFlag) {
+						playerList[i].animationQueue.RemoveAt(0);
+					}
+				} else if (playerList[i].animationQueue[0] == "game_over") { // game over animation
+					playerList[i].playerPos.AddComponent<Rigidbody> ();
+					playerList[i].animationQueue.RemoveAt(0);
+				}
+				continue;
+			}
+			if (playerList[i].currentPlatformIndex == t || playerList[i].currentPlatformIndex == (t + 1)) {
+				//displayOtherPlayer(i);
+				//displayPlayerLabel(i, "sync");
+			}
+		}
 	}
 
     public void onBackBtnClick() {
@@ -257,7 +308,7 @@ public class GameCtrl : MonoBehaviour
 	}
 
 	Vector3 randomDelta() {
-		if (direction) {
+		if (playerList[THIS_PLAYER_INDEX].direction) {
 			return new Vector3(0, ANIMATION_HEIGHT, Random.Range (1.2f, 4));
 		}
 		return new Vector3(-Random.Range (1.2f, 4), ANIMATION_HEIGHT, 0);
@@ -392,25 +443,25 @@ public class GameCtrl : MonoBehaviour
 	}
 
 	void createPlatform() {
-		direction = nextDirection();
-		platforms.Insert(platforms.Count, Instantiate(Platform, currPlatform(0).transform.position + randomDelta(), Quaternion.Euler (Vector3.zero)));
+		playerList[THIS_PLAYER_INDEX].direction = nextDirection();
+		platforms.Insert(platforms.Count, Instantiate(Platform, currPlatform(THIS_PLAYER_INDEX).transform.position + randomDelta(), Quaternion.Euler (Vector3.zero)));
 		// render color
 		if (extraBonus > 0) {
 			Material materialColored = new Material(Shader.Find("Diffuse"));
 	        materialColored.color = extraBonus == 1 ? Color.green : Color.yellow;
-	        nextPlatform(0).GetComponent<Renderer>().material = materialColored;
+	        nextPlatform(THIS_PLAYER_INDEX).GetComponent<Renderer>().material = materialColored;
 	    }
 
-		Point1 = nextPlatform(0).transform.position;
+		Point1 = nextPlatform(THIS_PLAYER_INDEX).transform.position;
 		Point2 = Point1;
 		Point2.y = 0.5f;
 
         //重新设置相机的位置
-		cameraCtrl.SetPosition ((currPlatform(0).transform.position + Point2) / 2);
+		cameraCtrl.SetPosition ((currPlatform(THIS_PLAYER_INDEX).transform.position + Point2) / 2);
 
 		Timer = 0;
 		gameStatus = GameStatus.SHOW_PLATFORM;
-		Power = 0;
+		playerList[THIS_PLAYER_INDEX].power = 0;
 	}
 
 	void playAgainFunc() {
@@ -465,7 +516,7 @@ public class GameCtrl : MonoBehaviour
 	}
 
 	// Update is called once per frame
-	void Update () {
+	void Update() {
 
 		if (MasterSceneManager.Instance.mainPause) {
 			return;
@@ -486,7 +537,7 @@ public class GameCtrl : MonoBehaviour
 		case GameStatus.SHOW_PLATFORM:
                 
 			Timer += Time.deltaTime;
-			nextPlatform(0).transform.position = Vector3.Lerp(Point1, Point2, Timer * Speed);
+			nextPlatform(THIS_PLAYER_INDEX).transform.position = Vector3.Lerp(Point1, Point2, Timer * Speed);
 
 			if (Timer * Speed > 1) {
 				gameStatus = GameStatus.TAPING;
@@ -503,30 +554,34 @@ public class GameCtrl : MonoBehaviour
 					playMusic(pressingAudio);
 					Timer += Time.deltaTime;
 					if (Timer < 4) {
-						Power = Timer * 3;
-						currPlatform(0).transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
-						currPlatform(0).transform.Translate (0, -0.1f * Time.deltaTime, 0);
+						playerList[THIS_PLAYER_INDEX].power = Timer * 3;
+						// for test 
+						playerList[1].power = Timer * 3;
+						currPlatform(THIS_PLAYER_INDEX).transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
+						currPlatform(THIS_PLAYER_INDEX).transform.Translate (0, -0.1f * Time.deltaTime, 0);
 						playerList[THIS_PLAYER_INDEX].player.transform.Translate (0, -0.2f * Time.deltaTime, 0);
 					}
 				} else {
 					stopMusic(pressingAudio);
 					IsPressing = false;
 					gameStatus = GameStatus.REBOUND;
-					Scale = currPlatform(0).transform.localScale.y;
+					Scale = currPlatform(THIS_PLAYER_INDEX).transform.localScale.y;
 				}
 			}
 			break;
 
 		case GameStatus.REBOUND:
 			Timer += Time.deltaTime;
-			currPlatform(0).transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
-			currPlatform(0).transform.Translate (0, 0.5f * Time.deltaTime, 0);
+			currPlatform(THIS_PLAYER_INDEX).transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
+			currPlatform(THIS_PLAYER_INDEX).transform.Translate (0, 0.5f * Time.deltaTime, 0);
 			playerList[THIS_PLAYER_INDEX].player.transform.Translate (0, 1.0f * Time.deltaTime, 0);
 
-			if (currPlatform(0).transform.position.y >= 0.5) {
+			if (currPlatform(THIS_PLAYER_INDEX).transform.position.y >= 0.5) {
 				gameStatus = GameStatus.PLAYER_JUMPING;
 				playerList[THIS_PLAYER_INDEX].VSpeed = 0.3f;
 				playerList[THIS_PLAYER_INDEX].prePlayerPosition = playerList[THIS_PLAYER_INDEX].player.transform.position;
+				// for test
+				playerList[1].prePlayerPosition = playerList[THIS_PLAYER_INDEX].prePlayerPosition;
 			}
 			// clear gameobject
 			//if (platforms.Count > 5) {
