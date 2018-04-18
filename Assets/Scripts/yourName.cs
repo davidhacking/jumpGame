@@ -9,6 +9,10 @@ using UnityEngine.Networking;
 
 public class yourName : MonoBehaviour {
 
+	public static string playerName = null;
+	public static string playerId = null;
+	public static string roomId = null;
+
 	public InputField name;
 	public Text tip;
 	public Button go;
@@ -19,8 +23,6 @@ public class yourName : MonoBehaviour {
 	name
 	*/
 	private static readonly string CONF_FILE = "config";
-
-	private static readonly string WEB_SERVER_URL = "http://192.168.45.130:5000";
 
 	float _waitTime = 2f;//前后两次按退出间隔时间
     void OnGUI() {
@@ -41,7 +43,7 @@ public class yourName : MonoBehaviour {
 
 	public IEnumerator register(string nameStr) {
     	// validate
-        UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/register?name=" + nameStr);
+        UnityWebRequest www = UnityWebRequest.Get(HttpHelper.HttpHelper.WEB_SERVER_URL + "/register?name=" + nameStr);
 		yield return www.Send();
 		if (www.isError) {
             Debug.Log(www.error);
@@ -60,6 +62,7 @@ public class yourName : MonoBehaviour {
             		}
             	}
             	//Application.LoadLevel("menu");
+            	playerName = nameStr;
             	MasterSceneManager.Instance.LoadNext("menu");
             	setTips("Application.LoadLeve menu");
             }
@@ -84,6 +87,7 @@ public class yourName : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		playerName = null;
 		initUI();
 		fileUtils = GetComponent<FileUtils>();
 		ArrayList lines = fileUtils.readFileToLines(CONF_FILE);
@@ -101,6 +105,8 @@ public class yourName : MonoBehaviour {
 		}
 		name.placeholder.GetComponent<Text>().text = nameTxt;
 		if (flag) {
+			playerName = nameTxt;
+			playerId = HttpHelper.HttpHelper.md5(playerName);
 			MasterSceneManager.Instance.LoadNext("menu");
 		}
 	}

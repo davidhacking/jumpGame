@@ -12,7 +12,7 @@ public class scrollViewCtrl : MonoBehaviour {
 	public UnityEngine.UI.Text text2;
 	private int i;
 
-	private static readonly string WEB_SERVER_URL = "http://192.168.45.130:5000";
+	private static readonly string WEB_SERVER_URL = "http://10.251.110.192:5000";
 
 	float deltaStep = 125.0f;
 

@@ -39,6 +39,12 @@ public class MenuCtrl : MonoBehaviour {
 		MasterSceneManager.Instance.LoadNext("main");
 	}
 
+	public void gotoPlayMultiMan() {
+		//Application.LoadLevel("main");
+		print("gotoPlayMultiMan");
+		MasterSceneManager.Instance.LoadNext("lobby");
+	}
+
 	public void gotoHistory() {
 		MasterSceneManager.Instance.loadScrollView();
 	}
@@ -55,7 +61,7 @@ public class MenuCtrl : MonoBehaviour {
 			// historyBtn.SetActive(false);
 		} else {
 			resumeBtn.SetActive(false);
-			restartBtn.GetComponentInChildren<Text>().text = "开始游戏";
+			restartBtn.GetComponentInChildren<Text>().text = "单人跳";
 			// historyBtn.SetActive(true);
 		}
 	}

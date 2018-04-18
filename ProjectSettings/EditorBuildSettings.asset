@@ -17,3 +17,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/scrollView.unity
     guid: e9f2a9ca75642bd4488c45d8fbce8e46
+  - enabled: 1
+    path: Assets/Scenes/lobby.unity
+    guid: dd73ce7c640b56040ba0910adb6ccf13
