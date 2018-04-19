@@ -32,6 +32,7 @@ public class lobbyCtrl : MonoBehaviour {
 			yourName.roomId = x["data"]["roomId"].ToString();
 
 			clearRoomList();
+			yourName.playerList = new List<string>();
 			for (int i = 0; i < x["data"]["playerList"].Count; i++) {
 				print("i: " + i + "; data: " + x["data"]["playerList"][i]);
 				bool firstItemFlag = false;
@@ -39,6 +40,7 @@ public class lobbyCtrl : MonoBehaviour {
 					firstItemFlag = true;
 				}
 				addItemToList(x["data"]["playerList"][i]["playerId"].ToString(), x["data"]["playerList"][i]["playerName"].ToString(), firstItemFlag);
+				yourName.playerList.Add(x["data"]["playerList"][i]["playerId"].ToString() + ";" +x["data"]["playerList"][i]["playerName"].ToString());
 			}
 			if (x["data"]["status"].ToString() == "playing") {
 				print("start playing");

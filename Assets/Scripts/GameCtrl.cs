@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 using System.Text.RegularExpressions;
 using HttpHelper;
 using PlayerJson;
-
+using MqHelper;
 
 public class GameCtrl : MonoBehaviour
 {
@@ -14,7 +14,6 @@ public class GameCtrl : MonoBehaviour
 	private static readonly string CONF_FILE = "config";
 	//private static readonly string WEB_SERVER_URL = "http://192.168.45.130:5000";
 	private static readonly string WEB_SERVER_URL = "http://127.0.0.1:5000";
-	public static string roomId = "" + new System.Random().Next(1, 10000000);
 	/*
 	-68 205
 	527 -57
@@ -60,10 +59,10 @@ public class GameCtrl : MonoBehaviour
 	int Bonus;
 	GameStatus gameStatus;
 	// all players data struct
-	PlayerJson.JsonHelper.Player[] playerList;
-	// 当前玩家的索引号
-	int THIS_PLAYER_INDEX = 0;
+	Dictionary<string, PlayerJson.JsonHelper.Player> playerList;
 	List<GameObject> platforms;
+	public Object platformLock;
+	public List<string> platformQueue;
 	CameraCtrl cameraCtrl;
 	int score;
 	bool sentScore;
@@ -94,12 +93,15 @@ public class GameCtrl : MonoBehaviour
         }
     }
 
-	public void clearPlayer(PlayerJson.JsonHelper.Player[] playerList) {
+	public void clearPlayer() {
 		if (playerList == null) {
 			return;
 		}
-		for (int i = 0; i < playerList.Length; i++) {
-			destroyPlayer(ref playerList[i]);
+		List<string> keys = new List<string>(playerList.Keys);
+		foreach (string key in keys) {
+			PlayerJson.JsonHelper.Player p = playerList[key];
+			destroyPlayer(ref p);
+			playerList[key] = p;
 		}
 	}
 
@@ -112,92 +114,82 @@ public class GameCtrl : MonoBehaviour
 		}
 	}
 
-	public PlayerJson.JsonHelper.Player[] newPlayerList(int len) {
-		PlayerJson.JsonHelper.Player[] playerList = new PlayerJson.JsonHelper.Player[len];
-		for (int i = 0; i < len; i++) {
-			playerList[i].player = Instantiate(playerAsset, new Vector3 (0, 1.25f, randomPos(0, i)), Quaternion.Euler (Vector3.zero));
-			playerList[i].playerPos = playerList[i].player.transform.Find("position").gameObject;
-			playerList[i].playerLabel = new GameObject();
-			playerList[i].playerLabel.transform.position = playerList[i].player.transform.position + new Vector3(0, playerList[i].player.transform.position.y + 0.4f * i, 0);
-			playerList[i].playerLabelTextMesh = playerList[i].playerLabel.AddComponent<TextMesh>() as TextMesh;
-			playerList[i].playerLabel.AddComponent<MeshRenderer>();
-			playerList[i].playerLabel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-			playerList[i].playerLabelTextMesh.text = "Id: " + i;
-			playerList[i].currentPlatformIndex = 0;
-			playerList[i].animationQueue = new List<string>();
-			playerList[i].queueLock = new Object();
+	public void newPlayerList() {
+		playerList = new Dictionary<string, PlayerJson.JsonHelper.Player>();
+		yourName.playerList.Sort();
+		for (int i = 0; i < yourName.playerList.Count; i++) {
+			PlayerJson.JsonHelper.Player p = new PlayerJson.JsonHelper.Player(); 
+			string[] ss = Regex.Split(yourName.playerList[i], ";", RegexOptions.IgnoreCase);
+			string id = ss[0];
+			p.index = i;
+			p.playerId = ss[0];
+			p.playerName = ss[1];
+			p.player = Instantiate(playerAsset, new Vector3 (0, 1.25f, randomPos(0, i)), Quaternion.Euler (Vector3.zero));
+			p.playerPos = p.player.transform.Find("position").gameObject;
+			p.playerLabel = new GameObject();
+			p.playerLabel.transform.position = p.player.transform.position + new Vector3(0, p.player.transform.position.y + 0.4f * i, 0);
+			p.playerLabelTextMesh = p.playerLabel.AddComponent<TextMesh>() as TextMesh;
+			p.playerLabel.AddComponent<MeshRenderer>();
+			p.playerLabel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+			p.playerLabelTextMesh.text = p.playerName;
+			p.currentPlatformIndex = 0;
+			p.animationQueue = new List<string>();
+			p.queueLock = new Object();
+			playerList[id] = p;
 		}
-		return playerList;
 	}
 
-	void displayPlayerLabel(int index, string text) {
+	void displayPlayerLabel(string index, string text) {
 		setEnable(index);
-		playerList[index].playerLabel.transform.position = playerList[index].player.transform.position + new Vector3(0, playerList[index].player.transform.position.y + 0.4f * index, 0);
+		playerList[index].playerLabel.transform.position = playerList[index].player.transform.position + new Vector3(0, playerList[index].player.transform.position.y + 0.4f * playerList[index].index, 0);
 		playerList[index].playerLabelTextMesh.text = text;
 	}
 
-	void setDisable(int index) {
+	void setDisable(string index) {
 		playerList[index].playerLabel.SetActive(false);
 	}
 
-	void setEnable(int index) {
+	void setEnable(string index) {
 		playerList[index].playerLabel.SetActive(true);
 	}
 
-	GameObject nextPlatform(int index) {
+	GameObject nextPlatform(string index) {
 		return platforms[playerList[index].currentPlatformIndex + 1];
 	}
 
-	GameObject currPlatform(int index) {
+	GameObject currPlatform(string index) {
 		return platforms[playerList[index].currentPlatformIndex];
 	}
 
-	void displayOtherPlayer(int index) {
-		//print("index: " + index + "; playerList[index].direction: " + playerList[index].direction + "; playerList[index].direction: " + playerList[index].currentPlatformIndex);
-		if (!playerList[index].direction) {
-			playerList[index].player.transform.position = new Vector3(currPlatform(index).transform.position.x, 1.25f, randomPos(currPlatform(index).transform.position.z, index));
-		} else {
-			playerList[index].player.transform.position = new Vector3(randomPos(currPlatform(index).transform.position.x, index), 1.25f, currPlatform(index).transform.position.z);
-		}
+	void displayPlayerInNextPlatform(string index) {
+		playerList[index].player.transform.position = new Vector3(playerList[index].player.transform.position.x, 1.25f, playerList[index].player.transform.position.z);
 		playerList[index].playerPos.transform.rotation = Quaternion.Euler(0, 0, 0);
 	}
-
-	void displayPlayerInNextPlatform(int index) {
-		if (!playerList[index].direction) {
-			playerList[index].player.transform.position = new Vector3(playerList[index].player.transform.position.x, 1.25f, randomPos(nextPlatform(index).transform.position.z, index));
-		} else {
-			playerList[index].player.transform.position = new Vector3(randomPos(nextPlatform(index).transform.position.x, index), 1.25f, playerList[index].player.transform.position.z);
-		}
-		playerList[index].playerPos.transform.rotation = Quaternion.Euler(0, 0, 0);
-		// for test
-		/*
-		if (index == THIS_PLAYER_INDEX) {
-			playerList[1].VSpeed = 0.3f;
-			playerList[1].direction = playerList[THIS_PLAYER_INDEX].direction;
-			playerList[1].animationQueue.Insert(playerList[1].animationQueue.Count, "jump");
-		}
-		*/
-	}
-	bool playerJump(int index) {
+	bool playerJump(string index) {
 		setDisable(index);
-		playerList[index].VSpeed -= Time.deltaTime;
-		//print("index: " + index + "; playerList[index].direction: " + playerList[index].direction);
-		if (playerList[index].direction) {
+		PlayerJson.JsonHelper.Player p = playerList[index];
+		p.VSpeed -= Time.deltaTime;
+		print("index: " + index + "; playerList[index].direction: " + p.direction);
+		if (p.direction) {
 			//playerList[index].player.transform.Translate(new Vector3((nextPlatform(index).transform.position.x - playerList[index].prePlayerPosition.x) / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, playerList[index].power / 0.6f * Time.deltaTime));
-			playerList[index].player.transform.Translate(new Vector3(0, playerList[index].VSpeed / 2, playerList[index].power / 0.6f * Time.deltaTime));
-			playerList[index].playerPos.transform.Rotate(new Vector3(720 * Time.deltaTime, 0));
+			p.player.transform.Translate(new Vector3(0, p.VSpeed / 2, 
+				p.power / 0.6f * Time.deltaTime));
+			p.playerPos.transform.Rotate(new Vector3(720 * Time.deltaTime, 0));
 		} else {
 			//playerList[index].player.transform.Translate(new Vector3(-playerList[index].power / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, (nextPlatform(index).transform.position.z - playerList[index].prePlayerPosition.z) / 0.6f * Time.deltaTime));
-			playerList[index].player.transform.Translate(new Vector3(-playerList[index].power / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, 0));
-			playerList[index].playerPos.transform.Rotate(new Vector3(0, 0, 720 * Time.deltaTime));
+			p.player.transform.Translate(new Vector3(-p.power / 0.6f * Time.deltaTime, 
+				p.VSpeed / 2, 0));
+			p.playerPos.transform.Rotate(new Vector3(0, 0, 720 * Time.deltaTime));
 		}
-		if (playerList[index].player.transform.position.y <= 1) {
+		if (p.player.transform.position.y <= 1) {
 			displayPlayerInNextPlatform(index);
-			if (Mathf.Abs(playerList[index].player.transform.position.x - currPlatform(index).transform.position.x) < 0.5 && Mathf.Abs (playerList[index].player.transform.position.z - currPlatform(index).transform.position.z) < 0.5) {
+			if (Mathf.Abs(p.player.transform.position.x - currPlatform(index).transform.position.x) < 0.5 && 
+				Mathf.Abs (p.player.transform.position.z - currPlatform(index).transform.position.z) < 0.5) {
 				gameStatus = GameStatus.TAPING;
 			} else {
-				if (Mathf.Abs(playerList[index].player.transform.position.x - nextPlatform(index).transform.position.x) > 0.5 || Mathf.Abs (playerList[index].player.transform.position.z - nextPlatform(index).transform.position.z) > 0.5) {
-					if (index == THIS_PLAYER_INDEX) {
+				if (Mathf.Abs(p.player.transform.position.x - nextPlatform(index).transform.position.x) > 0.5 || 
+					Mathf.Abs (p.player.transform.position.z - nextPlatform(index).transform.position.z) > 0.5) {
+					if (index == yourName.playerId) {
 						playMusic(deadAudio);
 						gameStatus = GameStatus.GAME_OVER;
 						Timer = 0;
@@ -205,8 +197,9 @@ public class GameCtrl : MonoBehaviour
 					// for test
 					//playerList[index].animationQueue.Insert(playerList[index].animationQueue.Count, "game_over");
 				} else {
-					if (index == THIS_PLAYER_INDEX) {
-						if (Mathf.Abs(playerList[index].player.transform.position.x - nextPlatform(index).transform.position.x) < 0.2 && Mathf.Abs(playerList[index].player.transform.position.z - nextPlatform(index).transform.position.z) < 0.2) {
+					if (index == yourName.playerId) {
+						if (Mathf.Abs(p.player.transform.position.x - nextPlatform(index).transform.position.x) < 0.2 && 
+							Mathf.Abs(p.player.transform.position.z - nextPlatform(index).transform.position.z) < 0.2) {
 							playMusic(bonusAudio);
 							Bonus++;
 							score += Bonus * 2 + extraBonus;
@@ -224,64 +217,72 @@ public class GameCtrl : MonoBehaviour
 						gameStatus = GameStatus.CREATE_PLATFORM;
 					}
 					// 当前platform+1
-					playerList[index].currentPlatformIndex++;
+					p.currentPlatformIndex++;
 				}
 			}
+			playerList[index] = p;
 			displayPlayerLabel(index, "jump");
 			return true;
 		}
+		playerList[index] = p;
 		return false;
 	}
 
-	public void syncPos(int index, ref LitJson.JsonData animJson) {
+	public void syncPos(string index, ref LitJson.JsonData animJson) {
 		print("xxxxxxxxxxxx syncPos: ");
-		playerList[index].player.transform.position = new Vector3(System.Convert.ToSingle(animJson["x"].ToString()), 
+		PlayerJson.JsonHelper.Player p = playerList[index];
+		p.player.transform.position = new Vector3(System.Convert.ToSingle(animJson["x"].ToString()), 
 			System.Convert.ToSingle(animJson["y"].ToString()), 
 			System.Convert.ToSingle(animJson["z"].ToString()));
-		playerList[index].prePlayerPosition = playerList[index].player.transform.position;
-		playerList[index].VSpeed = System.Convert.ToSingle(animJson["vspeed"].ToString());
-		playerList[index].power = System.Convert.ToSingle(animJson["power"].ToString());
-		playerList[index].currentPlatformIndex = System.Convert.ToInt32(animJson["index"].ToString());
-		playerList[index].direction = animJson["direction"].ToString() == "False" ? false : true;
+		p.prePlayerPosition = p.player.transform.position;
+		p.VSpeed = System.Convert.ToSingle(animJson["vspeed"].ToString());
+		p.power = System.Convert.ToSingle(animJson["power"].ToString());
+		p.currentPlatformIndex = System.Convert.ToInt32(animJson["index"].ToString());
+		p.direction = animJson["direction"].ToString() == "False" ? false : true;
+		playerList[index] = p;
 	}
 
 	public void syncAnimation() {
 		// other player status
-		int t = playerList[THIS_PLAYER_INDEX].currentPlatformIndex;
-		for (int i = 0; i < playerList.Length; i++) {
-			if (i == THIS_PLAYER_INDEX) {
+		int t = playerList[yourName.playerId].currentPlatformIndex;
+		List<string> keys = new List<string>(playerList.Keys);
+		foreach (string key in keys) {
+			if (key == yourName.playerId) {
 				continue;
 			}
-			lock (playerList[i].queueLock) {
-				if (playerList[i].animationQueue.Count > 0) {
+			lock (playerList[key].queueLock) {
+				PlayerJson.JsonHelper.Player p = playerList[key];
+				if (p.animationQueue.Count > 0) {
 					// play jump animation
-					LitJson.JsonData animJson = LitJson.JsonMapper.ToObject(playerList[i].animationQueue[0]);
+					LitJson.JsonData animJson = LitJson.JsonMapper.ToObject(p.animationQueue[0]);
 					if (animJson["action"].ToString() == "jump") {
-						print("jump action: " + playerList[i].animationQueue[0]);
-						if (!playerList[i].syncPosFlag) {
-							syncPos(i, ref animJson);
-							playerList[i].syncPosFlag = true;
+						print("jump action: " + p.animationQueue[0]);
+						if (!p.syncPosFlag) {
+							syncPos(key, ref animJson);
+							p.syncPosFlag = true;
 						}
-						bool endFlag = playerJump(i);
+						bool endFlag = playerJump(key);
 						if (endFlag) {
-							playerList[i].syncPosFlag = false;
-							playerList[i].animationQueue.RemoveAt(0);
+							p.syncPosFlag = false;
+							p.animationQueue.RemoveAt(0);
 						}
 					} else if (animJson["action"].ToString() == "game_over") { // game over animation
-						playerList[i].playerPos.AddComponent<Rigidbody> ();
-						playerList[i].animationQueue.RemoveAt(0);
+						p.playerPos.AddComponent<Rigidbody> ();
+						p.animationQueue.RemoveAt(0);
 					} else {
-						print("unknow action: " + playerList[i].animationQueue[0]);
-						playerList[i].animationQueue.RemoveAt(0);
+						print("unknow action: " + p.animationQueue[0]);
+						p.animationQueue.RemoveAt(0);
 					}
+					playerList[key] = p;
 					continue;
 				}
 			}
-			if (playerList[i].currentPlatformIndex == t || playerList[i].currentPlatformIndex == (t + 1)) {
+			if (playerList[key].currentPlatformIndex == t || playerList[key].currentPlatformIndex == (t + 1)) {
 				//displayOtherPlayer(i);
 				//displayPlayerLabel(i, "sync");
 			}
 		}
+		// create platform
 	}
 
     public void onBackBtnClick() {
@@ -325,8 +326,8 @@ public class GameCtrl : MonoBehaviour
 		Application.Quit();
 	}
 
-	Vector3 randomDelta() {
-		if (playerList[THIS_PLAYER_INDEX].direction) {
+	Vector3 randomDelta(bool direction) {
+		if (direction) {
 			return new Vector3(0, ANIMATION_HEIGHT, Random.Range (1.2f, 4));
 		}
 		return new Vector3(-Random.Range (1.2f, 4), ANIMATION_HEIGHT, 0);
@@ -398,21 +399,43 @@ public class GameCtrl : MonoBehaviour
         }
     }
 
-    public void updatePlayer(string roomId, int playerId, string ret) {
+    public void updatePlayer(string roomId, string playerId, string ret) {
     	if (ret != "{}") {
     		Debug.Log("updatePlayer ret: " + ret);
-    		lock (playerList[playerId].queueLock) {
-    			playerList[playerId].animationQueue.Insert(playerList[1].animationQueue.Count, ret);
-    		}
+			lock (playerList[playerId].queueLock) {
+				playerList[playerId].animationQueue.Insert(playerList[playerId].animationQueue.Count, ret);
+			}
     	}
         
-        System.Action<string, int, string> callback = updatePlayer;
+        System.Action<string, string, string> callback = updatePlayer;
         StartCoroutine(HttpHelper.HttpHelper.updatePlayerStatus(roomId, playerId, callback));
+    }
+    /*
+    {
+		"x":
+		"y":
+		"z":
+		"direction"
+    }
+    */
+    public void updatePlatform(string ret) {
+    	LitJson.JsonData x = LitJson.JsonMapper.ToObject(ret);
+		print("updatePlatform ret: " + ret);
+		if (x["return"].ToString() != "success") {
+			print("updatePlatform failed");
+		}
+		lock (platformLock) {
+			for (int i = platformQueue.Count; i < x["data"].Count; i++) {
+				platformQueue.Insert(platformQueue.Count, x["data"][i].ToString());
+			}
+		}
+        
+        System.Action<string> callback = updatePlatform;
+        StartCoroutine(HttpHelper.HttpHelper.updatePlatformStatus(yourName.roomId, callback));
     }
 
 	// Use this for initialization
 	void Start() {
-		PlayerJson.JsonHelper.test();
 		ArrayList lines = fileUtils.readFileToLines(CONF_FILE);
     	if (lines == null) {
     		//Application.LoadLevel("login");
@@ -430,15 +453,17 @@ public class GameCtrl : MonoBehaviour
 		IsPressing = false;
 		Bonus = 0;
 		initGame();
-		System.Action<string, int, string> callback = updatePlayer;
-		for (int i = 0; i < playerList.Length; i++) {
-			/*
-            if (i == THIS_PLAYER_INDEX) {
-                continue;
-            }
-            */
-            StartCoroutine(HttpHelper.HttpHelper.updatePlayerStatus(roomId, i, callback));
+		System.Action<string, string, string> callback = updatePlayer;
+		List<string> keys = new List<string>(playerList.Keys);
+		foreach (string key in keys) {
+			if (key == yourName.playerId) {
+				continue;
+			}
+            StartCoroutine(HttpHelper.HttpHelper.updatePlayerStatus(yourName.roomId, key, callback));
         }
+        // update platform
+        System.Action<string> callback2 = updatePlatform;
+        StartCoroutine(HttpHelper.HttpHelper.updatePlatformStatus(roomId, callback2));
 	}
 
 	private GameObject playerLabel;
@@ -461,8 +486,8 @@ public class GameCtrl : MonoBehaviour
 			}
 		}
 		platforms = new List<GameObject>();
-		clearPlayer(playerList);
-		playerList = newPlayerList(2);
+		clearPlayer();
+		newPlayerList();
 		Vector3 position = new Vector3 (0, 0.52f, 0);
 		platforms.Add(Instantiate(Platform, position, Quaternion.Euler (Vector3.zero)));
 		gameStatus = GameStatus.CREATE_PLATFORM;
@@ -482,26 +507,31 @@ public class GameCtrl : MonoBehaviour
 	}
 
 	void createPlatform() {
-		playerList[THIS_PLAYER_INDEX].direction = nextDirection();
-		platforms.Insert(platforms.Count, Instantiate(Platform, currPlatform(THIS_PLAYER_INDEX).transform.position + randomDelta(), Quaternion.Euler (Vector3.zero)));
+		PlayerJson.JsonHelper.Player p = playerList[yourName.playerId];
+		bool f = nextDirection();
+		p.direction = f;
+		platforms.Insert(platforms.Count, 
+			Instantiate(Platform, 
+				currPlatform(yourName.playerId).transform.position + randomDelta(p.direction), 
+				Quaternion.Euler (Vector3.zero)));
 		// render color
 		if (extraBonus > 0) {
 			Material materialColored = new Material(Shader.Find("Diffuse"));
 	        materialColored.color = extraBonus == 1 ? Color.green : Color.yellow;
-	        nextPlatform(THIS_PLAYER_INDEX).GetComponent<Renderer>().material = materialColored;
+	        nextPlatform(yourName.playerId).GetComponent<Renderer>().material = materialColored;
 	    }
 
-		Point1 = nextPlatform(THIS_PLAYER_INDEX).transform.position;
+		Point1 = nextPlatform(yourName.playerId).transform.position;
 		Point2 = Point1;
 		Point2.y = 0.5f;
 
         //重新设置相机的位置
-		cameraCtrl.SetPosition ((currPlatform(THIS_PLAYER_INDEX).transform.position + Point2) / 2);
-
+		cameraCtrl.SetPosition((currPlatform(yourName.playerId).transform.position + Point2) / 2);
+		nextPlatform(yourName.playerId).transform.position = Point2;
 		Timer = 0;
-		gameStatus = GameStatus.SHOW_PLATFORM;
-		playerList[THIS_PLAYER_INDEX].power = 0;
+		p.power = 0;
 		gameSyncFlag = false;
+		playerList[yourName.playerId] = p;
 	}
 
 	void playAgainFunc() {
@@ -555,19 +585,21 @@ public class GameCtrl : MonoBehaviour
 		}
 	}
 
-	string animationStr(string action) {
-		string ret = System.String.Format("{0};{1};{2};{3};{4};{5};{6};{7}", action, 
-			playerList[THIS_PLAYER_INDEX].prePlayerPosition.x, playerList[THIS_PLAYER_INDEX].prePlayerPosition.y, playerList[THIS_PLAYER_INDEX].prePlayerPosition.z,
-			playerList[THIS_PLAYER_INDEX].VSpeed,
-			playerList[THIS_PLAYER_INDEX].power,
-			playerList[THIS_PLAYER_INDEX].currentPlatformIndex,
-			playerList[THIS_PLAYER_INDEX].direction);
-		print("animationStr: " + ret);
-		return ret;
+	float updateLoginTime = 0;
+
+	public void unfriendlyCSharpFunction(string ret) {
 	}
 
 	// Update is called once per frame
 	void Update() {
+
+		updateLoginTime += Time.deltaTime;
+        if (updateLoginTime > 2) {
+        	updateLoginTime = 0;
+        	// 匹配房间
+        	System.Action<string> callback = unfriendlyCSharpFunction;
+			StartCoroutine(HttpHelper.HttpHelper.canStart(yourName.roomId, yourName.playerId, callback));
+        }
 
 		if (MasterSceneManager.Instance.mainPause) {
 			return;
@@ -584,76 +616,79 @@ public class GameCtrl : MonoBehaviour
 
 		case GameStatus.CREATE_PLATFORM:
             createPlatform();
+            gameStatus = GameStatus.TAPING;
+            // if playerList[yourName.playerId].currentPlatformIndex + 1 <= platformQueue.Count - 1
+            // gameStatus = GameStatus.TAPING;
 			break;
+		/*
 		case GameStatus.SHOW_PLATFORM:
                 
 			Timer += Time.deltaTime;
-			nextPlatform(THIS_PLAYER_INDEX).transform.position = Vector3.Lerp(Point1, Point2, Timer * Speed);
+			nextPlatform(yourName.playerId).transform.position = Vector3.Lerp(Point1, Point2, Timer * Speed);
 
 			if (Timer * Speed > 1) {
 				gameStatus = GameStatus.TAPING;
 				Timer = 0;
 			}
 			break;
+		*/
 		case GameStatus.TAPING:
 			if (isPressing(true)) {
 				playMusic(pressingAudio);
 				IsPressing = true;
 			}
 			if (IsPressing) {
+				PlayerJson.JsonHelper.Player p = playerList[yourName.playerId];
 				if (isPressing(false)) {
 					playMusic(pressingAudio);
 					Timer += Time.deltaTime;
 					if (Timer < 4) {
-						playerList[THIS_PLAYER_INDEX].power = Timer * 3;
+						p.power = Timer * 3;
 						// for test 
 						//playerList[1].power = Timer * 3;
-						currPlatform(THIS_PLAYER_INDEX).transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
-						currPlatform(THIS_PLAYER_INDEX).transform.Translate (0, -0.1f * Time.deltaTime, 0);
-						playerList[THIS_PLAYER_INDEX].player.transform.Translate (0, -0.2f * Time.deltaTime, 0);
+						currPlatform(yourName.playerId).transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
+						currPlatform(yourName.playerId).transform.Translate (0, -0.1f * Time.deltaTime, 0);
+						p.player.transform.Translate (0, -0.2f * Time.deltaTime, 0);
 					}
 				} else {
 					stopMusic(pressingAudio);
 					IsPressing = false;
 					gameStatus = GameStatus.REBOUND;
-					Scale = currPlatform(THIS_PLAYER_INDEX).transform.localScale.y;
+					Scale = currPlatform(yourName.playerId).transform.localScale.y;
 				}
+				playerList[yourName.playerId] = p;
 			}
 			break;
 
 		case GameStatus.REBOUND:
+			PlayerJson.JsonHelper.Player f = playerList[yourName.playerId];
 			Timer += Time.deltaTime;
-			currPlatform(THIS_PLAYER_INDEX).transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
-			currPlatform(THIS_PLAYER_INDEX).transform.Translate (0, 0.5f * Time.deltaTime, 0);
-			playerList[THIS_PLAYER_INDEX].player.transform.Translate (0, 1.0f * Time.deltaTime, 0);
+			currPlatform(yourName.playerId).transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
+			currPlatform(yourName.playerId).transform.Translate (0, 0.5f * Time.deltaTime, 0);
+			f.player.transform.Translate (0, 1.0f * Time.deltaTime, 0);
 
-			if (currPlatform(THIS_PLAYER_INDEX).transform.position.y >= 0.5) {
+			if (currPlatform(yourName.playerId).transform.position.y >= 0.5) {
 				gameStatus = GameStatus.PLAYER_JUMPING;
-				playerList[THIS_PLAYER_INDEX].VSpeed = 0.3f;
-				playerList[THIS_PLAYER_INDEX].prePlayerPosition = playerList[THIS_PLAYER_INDEX].player.transform.position;
+				f.VSpeed = 0.3f;
+				f.prePlayerPosition = f.player.transform.position;
+				playerList[yourName.playerId] = f;
 				// 记录动画
-				StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(PlayerJson.JsonHelper.animJson("jump", playerList, THIS_PLAYER_INDEX), roomId, THIS_PLAYER_INDEX));
-				// for test
-				//playerList[1].prePlayerPosition = playerList[THIS_PLAYER_INDEX].prePlayerPosition;
+				StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(PlayerJson.JsonHelper.animJson("jump", playerList, yourName.playerId), yourName.roomId, f.playerId));
 			}
-			// clear gameobject
-			//if (platforms.Count > 5) {
-			//	platforms.RemoveAt (0);
-			//	Destroy ((GameObject) platforms[0]);
-			//}
+			playerList[yourName.playerId] = f;
 			break;
 
 		case GameStatus.PLAYER_JUMPING:
-			playerJump(0);
+			playerJump(yourName.playerId);
 			break;
 
 		case GameStatus.GAME_OVER:
 			if (!gameSyncFlag) {
 				gameSyncFlag = true;
-				StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(PlayerJson.JsonHelper.animJson("game_over", playerList, THIS_PLAYER_INDEX), roomId, THIS_PLAYER_INDEX));
+				StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(PlayerJson.JsonHelper.animJson("game_over", playerList, yourName.playerId), yourName.roomId, playerList[yourName.playerId].playerId));
 			}
 			if (Timer == 0) {
-				Rig = playerList[THIS_PLAYER_INDEX].playerPos.AddComponent<Rigidbody> ();
+				Rig = playerList[yourName.playerId].playerPos.AddComponent<Rigidbody> ();
 			}
 			Timer += Time.deltaTime;
 			if (Timer >= 1) {

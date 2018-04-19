@@ -9,6 +9,8 @@ namespace PlayerJson {
 	public class JsonHelper {
 
 		public struct Player {
+			public string playerId;
+			public string playerName;
 			public GameObject player;
 			public GameObject playerLabel;
 			public TextMesh playerLabelTextMesh;
@@ -23,6 +25,7 @@ namespace PlayerJson {
 			public List<string> animationQueue;
 			public Object queueLock;
 			public bool syncPosFlag;
+			public int index;
 		};
 
 		public static void test() {
@@ -32,7 +35,7 @@ namespace PlayerJson {
 		}
 
 
-		public static string animJson(string action, Player[] playerList, int index) {
+		public static string animJson(string action, Dictionary<string, Player> playerList, string index) {
 			string ret = System.String.Format("{{'action': '{0}', 'x': {1}, 'y': {2}, 'z': {3}, 'vspeed': {4}, 'power': {5}, 'index': {6}, 'direction': '{7}'}}", action, 
 				playerList[index].prePlayerPosition.x, playerList[index].prePlayerPosition.y, playerList[index].prePlayerPosition.z,
 				playerList[index].VSpeed,

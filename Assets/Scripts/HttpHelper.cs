@@ -14,9 +14,7 @@ namespace HttpHelper {
 
     	public static readonly string WEB_SERVER_URL = "http://10.251.110.192:5000";
 
-    	public static IEnumerator syncPlayerStatus(string status, string roomId, int playerId) {
-            // for test2
-            if (playerId == 0) playerId = 1;
+    	public static IEnumerator syncPlayerStatus(string status, string roomId, string playerId) {
         	// validate
             string url = WEB_SERVER_URL + "/syncPlayerStatus?status=" + status 
                 + "&roomId=" + roomId 
@@ -31,9 +29,9 @@ namespace HttpHelper {
             }
         }
 
-        public static IEnumerator updatePlayerStatus(string roomId, int playerId, System.Action<string, int, string> callback) {
+        public static IEnumerator updatePlayerStatus(string roomId, string playerId, System.Action<string, string, string> callback) {
             UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/getPlayerStatus?roomId=" + roomId 
-                + "&playerId=" + playerId);
+                + "&playerId=" + playerId + "&myId=" + yourName.playerId);
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);
@@ -77,7 +75,7 @@ namespace HttpHelper {
             if (www.isError) {
                 Debug.Log(www.error);
             } else {
-                Debug.Log("createRoom response: " + www.downloadHandler.text);
+                //Debug.Log("createRoom response: " + www.downloadHandler.text);
                 callback(www.downloadHandler.text);
             }
         }
@@ -88,7 +86,7 @@ namespace HttpHelper {
             if (www.isError) {
                 Debug.Log(www.error);
             } else {
-                Debug.Log("canStart response: " + www.downloadHandler.text);
+                //Debug.Log("canStart response: " + www.downloadHandler.text);
                 callback(www.downloadHandler.text);
             }
         }

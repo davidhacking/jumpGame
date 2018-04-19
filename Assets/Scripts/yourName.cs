@@ -12,6 +12,7 @@ public class yourName : MonoBehaviour {
 	public static string playerName = null;
 	public static string playerId = null;
 	public static string roomId = null;
+	public static List<string> playerList = null;
 
 	public InputField name;
 	public Text tip;
@@ -63,6 +64,7 @@ public class yourName : MonoBehaviour {
             	}
             	//Application.LoadLevel("menu");
             	playerName = nameStr;
+            	playerId = HttpHelper.HttpHelper.md5(playerName);
             	MasterSceneManager.Instance.LoadNext("menu");
             	setTips("Application.LoadLeve menu");
             }
