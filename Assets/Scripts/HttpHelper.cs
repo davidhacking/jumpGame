@@ -44,8 +44,15 @@ namespace HttpHelper {
             }
         }
 
-        public static IEnumerator updatePlatformStatus(string roomId, System.Action<string> callback) {
-            UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/getPlatformStatus?roomId=" + roomId);
+        public static IEnumerator updatePlatformStatus(string roomId, 
+            int currPlatIndex,
+            int currPlayerIndex,
+            System.Action<string> callback) {
+            string url = WEB_SERVER_URL + "/getPlatformStatus?roomId=" + roomId +
+                "&currPlatIndex=" + currPlatIndex + 
+                "&currPlayerIndex=" + currPlayerIndex;
+            Debug.Log("updatePlatformStatus url: " + url);
+            UnityWebRequest www = UnityWebRequest.Get(url);
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);

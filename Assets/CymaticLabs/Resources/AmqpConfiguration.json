@@ -1,0 +1,15 @@
+{
+	"Connections": [
+		{
+			"Name": "192.168.45.130",
+			"Host": "192.168.45.130",
+			"AmqpPort": 5672,
+			"WebPort": 15672,
+			"VirtualHost": "/",
+			"Username": "admin",
+			"Password": "admin",
+			"ReconnectInterval": 5,
+			"RequestedHeartBeat": 30
+		}
+	]
+}
