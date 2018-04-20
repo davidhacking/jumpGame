@@ -36,9 +36,9 @@ namespace HttpHelper {
             if (www.isError) {
                 Debug.Log(www.error);
             } else {
-                Debug.Log("updatePlayerStatus response: " + www.downloadHandler.text);
+                //Debug.Log("updatePlayerStatus response: " + www.downloadHandler.text);
                 // 100ms 同步一次
-                //yield return new WaitForSeconds(0.1f);
+                ///yield return new WaitForSeconds(1.0f);
                 yield return new WaitForSeconds(0.1f);
                 callback(roomId, playerId, www.downloadHandler.text);
             }
@@ -51,15 +51,15 @@ namespace HttpHelper {
             string url = WEB_SERVER_URL + "/getPlatformStatus?roomId=" + roomId +
                 "&currPlatIndex=" + currPlatIndex + 
                 "&currPlayerIndex=" + currPlayerIndex;
-            Debug.Log("updatePlatformStatus url: " + url);
+            //Debug.Log("updatePlatformStatus url: " + url);
             UnityWebRequest www = UnityWebRequest.Get(url);
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);
             } else {
-                Debug.Log("updatePlatformStatus response: " + www.downloadHandler.text);
+                //Debug.Log("updatePlatformStatus response: " + www.downloadHandler.text);
                 // 100ms 同步一次
-                //yield return new WaitForSeconds(0.1f);
+                //yield return new WaitForSeconds(1.0f);
                 yield return new WaitForSeconds(0.1f);
                 callback(www.downloadHandler.text);
             }

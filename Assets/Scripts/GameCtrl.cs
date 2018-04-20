@@ -14,6 +14,7 @@ public class GameCtrl : MonoBehaviour
 	private static readonly string CONF_FILE = "config";
 	//private static readonly string WEB_SERVER_URL = "http://192.168.45.130:5000";
 	private static readonly string WEB_SERVER_URL = "http://127.0.0.1:5000";
+	private static readonly float DEAD_TIME = 3.0f;
 	public Text log;
 	/*
 	-68 205
@@ -65,6 +66,8 @@ public class GameCtrl : MonoBehaviour
 	List<GameObject> platforms;
 	public Object platformLock = new Object();
 	public List<string> platformQueue;
+	public int toBeDestoryPlatformIndex = 0;
+	public double platformInitTime = double.NaN;
 	CameraCtrl cameraCtrl;
 	int score;
 	bool sentScore;
@@ -137,6 +140,8 @@ public class GameCtrl : MonoBehaviour
 			p.currentPlatformIndex = 0;
 			p.animationQueue = new List<string>();
 			p.queueLock = new Object();
+			p.alive = true;
+			p.status = "ok";
 			playerList[id] = p;
 		}
 	}
@@ -156,13 +161,17 @@ public class GameCtrl : MonoBehaviour
 	}
 
 	GameObject nextPlatform(string index) {
+		// debug
+		/*
 		print("nextPlatform playerList[index].currentPlatformIndex: " + playerList[index].currentPlatformIndex);
 		for (int i = 0; i < platforms.Count; i++) {
+			if (platforms[i] == null) continue; 
 			print(" " + i);
 			print("Vector3: " + platforms[i].transform.position.x);
 			print("Vector3: " + platforms[i].transform.position.y);
 			print("Vector3: " + platforms[i].transform.position.z);
 		}
+		*/
 		return platforms[playerList[index].currentPlatformIndex + 1];
 	}
 
@@ -170,15 +179,29 @@ public class GameCtrl : MonoBehaviour
 		return platforms[playerList[index].currentPlatformIndex];
 	}
 
-	void displayPlayerInNextPlatform(string index) {
-		playerList[index].player.transform.position = new Vector3(playerList[index].player.transform.position.x, 1.25f, playerList[index].player.transform.position.z);
-		playerList[index].playerPos.transform.rotation = Quaternion.Euler(0, 0, 0);
+	Vector3 currPlatformPos(string index) {
+		LitJson.JsonData x = LitJson.JsonMapper.ToObject(platformQueue[playerList[index].currentPlatformIndex]);
+		Vector3 pos = new Vector3(System.Convert.ToSingle(x["x"].ToString()), 
+			System.Convert.ToSingle(x["y"].ToString()), 
+			System.Convert.ToSingle(x["z"].ToString()));
+		return pos;
+	}
+
+	void displayPlayerInNextPlatform(ref PlayerJson.JsonHelper.Player p) {
+		p.player.transform.position = new Vector3(p.player.transform.position.x, 1.25f, p.player.transform.position.z);
+		p.playerPos.transform.rotation = Quaternion.Euler(0, 0, 0);
 	}
 	bool playerJump(string index) {
 		setDisable(index);
 		PlayerJson.JsonHelper.Player p = playerList[index];
+		p.status = "jumping";
+		playerList[index] = p;
 		p.VSpeed -= Time.deltaTime;
 		print("index: " + index + "; playerList[index].direction: " + p.direction);
+		print("index: " + index + "; p.playerPos.transform.position.x: " + p.playerPos.transform.position.x);
+		print("index: " + index + "; p.playerPos.transform.position.y: " + p.playerPos.transform.position.y);
+		print("index: " + index + "; p.playerPos.transform.position.z: " + p.playerPos.transform.position.z);
+		print("index: " + index + "; p.power: " + p.power);
 		if (p.direction) {
 			//playerList[index].player.transform.Translate(new Vector3((nextPlatform(index).transform.position.x - playerList[index].prePlayerPosition.x) / 0.6f * Time.deltaTime, playerList[index].VSpeed / 2, playerList[index].power / 0.6f * Time.deltaTime));
 			p.player.transform.Translate(new Vector3(0, p.VSpeed / 2, 
@@ -191,13 +214,16 @@ public class GameCtrl : MonoBehaviour
 			p.playerPos.transform.Rotate(new Vector3(0, 0, 720 * Time.deltaTime));
 		}
 		if (p.player.transform.position.y <= 1) {
-			displayPlayerInNextPlatform(index);
-			if (Mathf.Abs(p.player.transform.position.x - currPlatform(index).transform.position.x) < 0.5 && 
-				Mathf.Abs (p.player.transform.position.z - currPlatform(index).transform.position.z) < 0.5) {
+			displayPlayerInNextPlatform(ref p);
+			print("debug: p.player is null? " + (p.player == null));
+			print("debug: p.player.transform.position.x " + p.player.transform.position.x);
+			if (Mathf.Abs(p.player.transform.position.x - currPlatformPos(index).x) < 0.5 && 
+				Mathf.Abs(p.player.transform.position.z - currPlatformPos(index).z) < 0.5) {
 				gameStatus = GameStatus.TAPING;
 			} else {
 				if (Mathf.Abs(p.player.transform.position.x - nextPlatform(index).transform.position.x) > 0.5 || 
 					Mathf.Abs (p.player.transform.position.z - nextPlatform(index).transform.position.z) > 0.5) {
+					print("player: " + index + " game over");
 					if (index == yourName.playerId) {
 						playMusic(deadAudio);
 						p.power = 0;
@@ -231,6 +257,7 @@ public class GameCtrl : MonoBehaviour
 					p.currentPlatformIndex++;
 				}
 			}
+			p.status = "ok";
 			playerList[index] = p;
 			displayPlayerLabel(index, "jump");
 			return true;
@@ -239,7 +266,7 @@ public class GameCtrl : MonoBehaviour
 		return false;
 	}
 
-	public void syncPos(string index, ref LitJson.JsonData animJson) {
+	public PlayerJson.JsonHelper.Player syncPos(string index, ref LitJson.JsonData animJson) {
 		print("xxxxxxxxxxxx syncPos: ");
 		PlayerJson.JsonHelper.Player p = playerList[index];
 		p.player.transform.position = new Vector3(System.Convert.ToSingle(animJson["x"].ToString()), 
@@ -250,7 +277,7 @@ public class GameCtrl : MonoBehaviour
 		p.power = System.Convert.ToSingle(animJson["power"].ToString());
 		p.currentPlatformIndex = System.Convert.ToInt32(animJson["index"].ToString());
 		p.direction = animJson["direction"].ToString() == "False" ? false : true;
-		playerList[index] = p;
+		return playerList[index] = p;
 	}
 
 	public void syncPlatform(string platformInfo) {
@@ -261,7 +288,7 @@ public class GameCtrl : MonoBehaviour
 			System.Convert.ToSingle(x["z"].ToString()));
 		platforms.Add(Instantiate(Platform, pos, Quaternion.Euler(Vector3.zero)));
         //重新设置相机的位置
-		cameraCtrl.SetPosition((currPlatform(yourName.playerId).transform.position + platforms[playerList[yourName.playerId].currentPlatformIndex + 1].transform.position) / 2);
+		cameraCtrl.SetPosition((currPlatformPos(yourName.playerId) + platforms[playerList[yourName.playerId].currentPlatformIndex + 1].transform.position) / 2);
 		Timer = 0;
 		gameSyncFlag = false;
 	}
@@ -271,7 +298,7 @@ public class GameCtrl : MonoBehaviour
 		int t = playerList[yourName.playerId].currentPlatformIndex;
 		List<string> keys = new List<string>(playerList.Keys);
 		foreach (string key in keys) {
-			if (key == yourName.playerId) {
+			if (key == yourName.playerId || playerList[key].alive == false) {
 				continue;
 			}
 			lock (playerList[key].queueLock) {
@@ -282,15 +309,18 @@ public class GameCtrl : MonoBehaviour
 					if (animJson["action"].ToString() == "jump") {
 						print("jump action: " + p.animationQueue[0]);
 						if (!p.syncPosFlag) {
-							syncPos(key, ref animJson);
+							p = syncPos(key, ref animJson);
 							p.syncPosFlag = true;
+							playerList[key] = p;
 						}
 						bool endFlag = playerJump(key);
+						p = playerList[key];
 						if (endFlag) {
 							p.syncPosFlag = false;
 							p.animationQueue.RemoveAt(0);
 						}
 					} else if (animJson["action"].ToString() == "game_over") { // game over animation
+						print("game_over action: " + p.animationQueue[0]);
 						p.playerPos.AddComponent<Rigidbody> ();
 						p.animationQueue.RemoveAt(0);
 					} else {
@@ -312,6 +342,56 @@ public class GameCtrl : MonoBehaviour
 				syncPlatform(platformQueue[i]);
 			}
 			syncPlatIndex = platformQueue.Count - 1 > 0 ? platformQueue.Count - 1 : 0;
+		}
+		// move camera
+		if (platforms.Count > playerList[yourName.playerId].currentPlatformIndex + 1) {
+			if (currPlatform(yourName.playerId) != null) {
+				cameraCtrl.SetPosition((currPlatform(yourName.playerId).transform.position + 
+					platforms[playerList[yourName.playerId].currentPlatformIndex + 1].transform.position) / 2);
+			}
+		}
+		// destory platform
+		if (platformQueue.Count > 0 && gameStatus != GameStatus.GAME_OVER && gameStatus != GameStatus.PLAY_AGAIN) {
+			if (platforms.Count > toBeDestoryPlatformIndex && platforms[toBeDestoryPlatformIndex] != null) {
+				if (double.IsNaN(platformInitTime)) {
+					LitJson.JsonData x = LitJson.JsonMapper.ToObject(platformQueue[0]);
+					print("platformInitTime string: " + x["timestamp"].ToString());
+					platformInitTime = double.Parse(x["timestamp"].ToString());
+					print("platformInitTime: " + platformInitTime);
+				}
+				print("now: " + PlayerJson.JsonHelper.nowTimestamp().ToString("0.000"));
+				print("platformInitTime: " + platformInitTime.ToString("0.000"));
+				print("compare: " + (PlayerJson.JsonHelper.nowTimestamp() - platformInitTime - DEAD_TIME * (toBeDestoryPlatformIndex + 1)));
+				if (PlayerJson.JsonHelper.nowTimestamp() - platformInitTime > DEAD_TIME * (toBeDestoryPlatformIndex + 1)) {
+					for (int i = 0; i <= toBeDestoryPlatformIndex; i++) {
+						if (platforms[i] == null) continue; 
+						platforms[i].SetActive(false);
+						Destroy(platforms[i]);
+						platforms[i] = null;
+					}
+					toBeDestoryPlatformIndex++;
+					killPlayer();
+				}
+			}
+		}
+	}
+
+	public void killPlayer() {
+		List<string> keys = new List<string>(playerList.Keys);
+		foreach (string key in keys) {
+			PlayerJson.JsonHelper.Player p = playerList[key];
+			if (p.status == "jumping") continue;
+			if (p.currentPlatformIndex < toBeDestoryPlatformIndex) {
+				p.alive = false;
+				p.playerPos.AddComponent<Rigidbody>();
+			}
+			playerList[key] = p;
+		}
+		if (playerList[yourName.playerId].alive == false) {
+			if (gameStatus != GameStatus.PLAY_AGAIN || gameStatus != GameStatus.GAME_OVER) {
+				gameStatus = GameStatus.GAME_OVER;
+				playerList[yourName.playerId].playerPos.AddComponent<Rigidbody>();
+			}
 		}
 	}
 
@@ -452,7 +532,7 @@ public class GameCtrl : MonoBehaviour
     */
     public void updatePlatform(string ret) {
     	LitJson.JsonData x = LitJson.JsonMapper.ToObject(ret);
-		print("updatePlatform ret: " + ret);
+		//print("updatePlatform ret: " + ret);
 		if (x["return"].ToString() != "success") {
 			print("updatePlatform failed");
 		}
@@ -557,33 +637,6 @@ public class GameCtrl : MonoBehaviour
 		return pos;
 	}
 
-	void createPlatform() {
-		PlayerJson.JsonHelper.Player p = playerList[yourName.playerId];
-		bool f = nextDirection();
-		p.direction = f;
-		platforms.Add(Instantiate(Platform, 
-				currPlatform(yourName.playerId).transform.position + randomDelta(p.direction), 
-				Quaternion.Euler (Vector3.zero)));
-		// render color
-		if (extraBonus > 0) {
-			Material materialColored = new Material(Shader.Find("Diffuse"));
-	        materialColored.color = extraBonus == 1 ? Color.green : Color.yellow;
-	        nextPlatform(yourName.playerId).GetComponent<Renderer>().material = materialColored;
-	    }
-
-		Point1 = nextPlatform(yourName.playerId).transform.position;
-		Point2 = Point1;
-		Point2.y = 0.5f;
-
-        //重新设置相机的位置
-		cameraCtrl.SetPosition((currPlatform(yourName.playerId).transform.position + Point2) / 2);
-		nextPlatform(yourName.playerId).transform.position = Point2;
-		Timer = 0;
-		p.power = 0;
-		gameSyncFlag = false;
-		playerList[yourName.playerId] = p;
-	}
-
 	void playAgainFunc() {
 		if (!sentScore) {
 			StartCoroutine(recordScore(score));
@@ -676,6 +729,7 @@ public class GameCtrl : MonoBehaviour
             	p.direction = x["direction"].ToString() == "True" ? true : false;
             	playerList[yourName.playerId] = p;
             	gameStatus = GameStatus.TAPING;
+            	Timer = 0;
             }
 			break;
 		/*
@@ -702,17 +756,19 @@ public class GameCtrl : MonoBehaviour
 					Timer += Time.deltaTime;
 					if (Timer < 4) {
 						p.power = Timer * 3;
-						// for test 
-						//playerList[1].power = Timer * 3;
-						currPlatform(yourName.playerId).transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
-						currPlatform(yourName.playerId).transform.Translate (0, -0.1f * Time.deltaTime, 0);
-						p.player.transform.Translate (0, -0.2f * Time.deltaTime, 0);
+						// currPlatform 可能返回空，因为当前木块可能为空
+						if (currPlatform(yourName.playerId) != null) {
+							currPlatform(yourName.playerId).transform.localScale = new Vector3 (1, 1 - 0.2f * Timer, 1);
+							currPlatform(yourName.playerId).transform.Translate (0, -0.1f * Time.deltaTime, 0);
+						}
+						p.player.transform.Translate(0, -0.2f * Time.deltaTime, 0);
 					}
 				} else {
 					stopMusic(pressingAudio);
 					IsPressing = false;
 					gameStatus = GameStatus.REBOUND;
-					Scale = currPlatform(yourName.playerId).transform.localScale.y;
+					if (currPlatform(yourName.playerId) != null)
+						Scale = currPlatform(yourName.playerId).transform.localScale.y;
 				}
 				playerList[yourName.playerId] = p;
 			}
@@ -721,17 +777,21 @@ public class GameCtrl : MonoBehaviour
 		case GameStatus.REBOUND:
 			PlayerJson.JsonHelper.Player f = playerList[yourName.playerId];
 			Timer += Time.deltaTime;
-			currPlatform(yourName.playerId).transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
-			currPlatform(yourName.playerId).transform.Translate (0, 0.5f * Time.deltaTime, 0);
+			if (currPlatform(yourName.playerId) != null) {
+				currPlatform(yourName.playerId).transform.localScale = Vector3.Lerp (new Vector3 (1, Scale, 1), new Vector3 (1, 1, 1), Timer);
+				currPlatform(yourName.playerId).transform.Translate (0, 0.5f * Time.deltaTime, 0);
+			}
 			f.player.transform.Translate (0, 1.0f * Time.deltaTime, 0);
 
-			if (currPlatform(yourName.playerId).transform.position.y >= 0.5) {
+			if (currPlatform(yourName.playerId) == null || currPlatform(yourName.playerId).transform.position.y >= 0.5) {
 				gameStatus = GameStatus.PLAYER_JUMPING;
 				f.VSpeed = 0.3f;
 				f.prePlayerPosition = f.player.transform.position;
 				playerList[yourName.playerId] = f;
 				// 记录动画
-				StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(PlayerJson.JsonHelper.animJson("jump", playerList, yourName.playerId), yourName.roomId, f.playerId));
+				StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(
+					PlayerJson.JsonHelper.animJson("jump", playerList, yourName.playerId), 
+					yourName.roomId, f.playerId));
 			}
 			playerList[yourName.playerId] = f;
 			break;
@@ -741,13 +801,14 @@ public class GameCtrl : MonoBehaviour
 			break;
 
 		case GameStatus.GAME_OVER:
+			stopMusic(pressingAudio);
 			if (!gameSyncFlag) {
 				gameSyncFlag = true;
 				print("game_over");
 				StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(PlayerJson.JsonHelper.animJson("game_over", playerList, yourName.playerId), yourName.roomId, playerList[yourName.playerId].playerId));
 			}
 			if (Timer == 0) {
-				Rig = playerList[yourName.playerId].playerPos.AddComponent<Rigidbody> ();
+				Rig = playerList[yourName.playerId].playerPos.AddComponent<Rigidbody>();
 			}
 			Timer += Time.deltaTime;
 			if (Timer >= 1) {

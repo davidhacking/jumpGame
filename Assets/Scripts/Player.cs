@@ -11,6 +11,7 @@ namespace PlayerJson {
 		public struct Player {
 			public string playerId;
 			public string playerName;
+			public string status;
 			public GameObject player;
 			public GameObject playerLabel;
 			public TextMesh playerLabelTextMesh;
@@ -26,7 +27,14 @@ namespace PlayerJson {
 			public Object queueLock;
 			public bool syncPosFlag;
 			public int index;
+			public bool alive;
 		};
+
+		public static double nowTimestamp() {
+			System.TimeSpan t = (System.DateTime.UtcNow - 
+            	new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc));
+ 			return (double) t.TotalSeconds;
+		}
 
 		public static void test() {
 			string s = "{'name': 'david'}";

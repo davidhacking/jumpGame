@@ -34,7 +34,7 @@ public class lobbyCtrl : MonoBehaviour {
 			clearRoomList();
 			yourName.playerList = new List<string>();
 			for (int i = 0; i < x["data"]["playerList"].Count; i++) {
-				print("i: " + i + "; data: " + x["data"]["playerList"][i]);
+				//print("i: " + i + "; data: " + x["data"]["playerList"][i]);
 				bool firstItemFlag = false;
 				if (i == 0) {
 					firstItemFlag = true;
