@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using System.IO;
 using System;
 using UnityEngine.Networking;
+using System.Text.RegularExpressions;
 
 
 public class yourName : MonoBehaviour {
@@ -13,6 +14,7 @@ public class yourName : MonoBehaviour {
 	public static string playerId = null;
 	public static string roomId = null;
 	public static List<string> playerList = null;
+	public bool iknow = false;
 
 	public InputField name;
 	public Text tip;
@@ -119,6 +121,22 @@ public class yourName : MonoBehaviour {
 			setTips("还不能走，请输入你的名字");
 			return;
 		}
+		if (name.text.Length > 16) {
+			setTips("名字不能大于16个字符");
+			return;
+		}
+		if (name.text.Length > 5 && iknow == false) {
+			iknow = true;
+			setTips("名字大于5会被截断,确认再点go");
+			return;
+		}
+		Match match = Regex.Match(name.text, @"^[a-zA-Z0-9]+([_ -]?[a-zA-Z0-9])*$",
+            RegexOptions.IgnoreCase);
+		if (!match.Success) {
+			setTips("名字只能是数字和字母");
+			return;
+		}
+
 		StartCoroutine(register(name.text));
 	}
 

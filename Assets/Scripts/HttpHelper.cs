@@ -12,9 +12,10 @@ namespace HttpHelper {
 
     public class HttpHelper {
 
-    	public static readonly string WEB_SERVER_URL = "http://10.251.110.192:5000";
+    	public static readonly string WEB_SERVER_URL = "http://192.168.45.130:5000";
+        public static float waitTime = 0.1f;
 
-    	public static IEnumerator syncPlayerStatus(string status, string roomId, string playerId) {
+    	public static IEnumerator syncPlayerStatus(string status, string roomId, string playerId, System.Action<string> callback = null) {
         	// validate
             string url = WEB_SERVER_URL + "/syncPlayerStatus?status=" + status 
                 + "&roomId=" + roomId 
@@ -24,8 +25,14 @@ namespace HttpHelper {
     		yield return www.Send();
     		if (www.isError) {
                 Debug.Log(www.error);
+                if (onHttpError != null) {
+                    onHttpError("syncPlayerStatus");
+                }
             } else {
             	Debug.Log(www.downloadHandler.text);
+                if (callback != null) {
+                    callback(www.downloadHandler.text);
+                }
             }
         }
 
@@ -35,11 +42,13 @@ namespace HttpHelper {
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);
+                if (onHttpError != null) {
+                    onHttpError("updatePlayerStatus");
+                }
             } else {
-                //Debug.Log("updatePlayerStatus response: " + www.downloadHandler.text);
+                Debug.Log("updatePlayerStatus response: " + www.downloadHandler.text);
                 // 100ms 同步一次
-                ///yield return new WaitForSeconds(1.0f);
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(waitTime);
                 callback(roomId, playerId, www.downloadHandler.text);
             }
         }
@@ -56,11 +65,13 @@ namespace HttpHelper {
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);
+                if (onHttpError != null) {
+                    onHttpError("updatePlatformStatus");
+                }
             } else {
                 //Debug.Log("updatePlatformStatus response: " + www.downloadHandler.text);
                 // 100ms 同步一次
-                //yield return new WaitForSeconds(1.0f);
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(waitTime);
                 callback(www.downloadHandler.text);
             }
         }
@@ -70,6 +81,9 @@ namespace HttpHelper {
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);
+                if (onHttpError != null) {
+                    onHttpError("roomList");
+                }
             } else {
                 Debug.Log("roomList response: " + www.downloadHandler.text);
                 callback(www.downloadHandler.text);
@@ -77,23 +91,49 @@ namespace HttpHelper {
         }
 
         public static IEnumerator createRoom(string playerId, string playerName, System.Action<string> callback) {
+            Debug.Log("updatePlatformStatus start time: " + PlayerJson.JsonHelper.nowTimestamp().ToString("0.00000"));
             UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/createRoom?playerId=" + playerId + "&playerName=" + playerName);
             yield return www.Send();
+            Debug.Log("time: " + PlayerJson.JsonHelper.nowTimestamp().ToString("0.00000"));
             if (www.isError) {
                 Debug.Log(www.error);
+                if (onHttpError != null) {
+                    onHttpError("createRoom");
+                }
             } else {
                 //Debug.Log("createRoom response: " + www.downloadHandler.text);
+                // 100ms 同步一次
+                yield return new WaitForSeconds(waitTime);
                 callback(www.downloadHandler.text);
             }
         }
+
+        public static System.Action<string> onHttpError = null;
 
         public static IEnumerator canStart(string roomId, string playerId, System.Action<string> callback) {
             UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/canStart?playerId=" + playerId + "&roomId=" + roomId);
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);
+                if (onHttpError != null) {
+                    onHttpError("canStart");
+                }
             } else {
                 //Debug.Log("canStart response: " + www.downloadHandler.text);
+                callback(www.downloadHandler.text);
+            }
+        }
+
+        public static IEnumerator delPlayerInRoom(string playerId, string roomId, System.Action<string> callback) {
+            UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/delPlayerInRoom?playerId=" + playerId + "&roomId=" + roomId);
+            yield return www.Send();
+            if (www.isError) {
+                Debug.Log(www.error);
+                if (onHttpError != null) {
+                    onHttpError("delPlayerInRoom");
+                }
+            } else {
+                Debug.Log("delPlayerInRoom response: " + www.downloadHandler.text);
                 callback(www.downloadHandler.text);
             }
         }

@@ -15,19 +15,16 @@ public class lobbyCtrl : MonoBehaviour {
 	public GameObject itemTemplate;
 	public Text tip;
 	public Text title;
+	public bool displayFlag = true;
 
 	float deltaTime;
 
 	public void createRoomCB(string ret) {
+		displayFlag = true;
 		LitJson.JsonData x = LitJson.JsonMapper.ToObject(ret);
-		print("createRoomCB retrun: " + x["return"]);
-		if (x["return"].ToString() == "success") {
-			setTips("正在匹配。。。");
-			print("createRoomCB data: " + x["data"]);
-			if (x["data"] == null) {
-				System.Action<string> callback = createRoomCB;
-				StartCoroutine(HttpHelper.HttpHelper.createRoom(yourName.playerId, yourName.playerName, callback));
-			}
+		//print("createRoomCB retrun: " + x["return"]);
+		if (x["return"].ToString() == "success" && x["data"] != null) {
+			//print("createRoomCB data: " + x["data"].ToString());
 			title.text = x["data"]["roomId"].ToString() + "号房间";
 			yourName.roomId = x["data"]["roomId"].ToString();
 
@@ -45,24 +42,36 @@ public class lobbyCtrl : MonoBehaviour {
 			if (x["data"]["status"].ToString() == "playing") {
 				print("start playing");
 				MasterSceneManager.Instance.LoadNext("main");
+				return;
 			}
 		} else {
-			setTips("加入房间失败");
+			if (deltaTime > 1) {
+				setTips("加入房间失败");
+			}
+		}
+		if (quitRoomClicked == false) {
 			System.Action<string> callback = createRoomCB;
 			StartCoroutine(HttpHelper.HttpHelper.createRoom(yourName.playerId, yourName.playerName, callback));
 		}
 	}
 
-	public void onCreateRoomBtnClick() {
-		print("createRoomBtn Click");
+	public void onHttpError(string httpError) {
+		displayFlag = false;
+		setTips("无法连接服务器");
+		System.Action<string> callback = createRoomCB;
+		StartCoroutine(HttpHelper.HttpHelper.createRoom(yourName.playerId, yourName.playerName, callback));
 	}
+
+	bool quitRoomClicked;
 
 	// Use this for initialization
 	void Start() {
 		deltaTime = 0;
+		quitRoomClicked = false;
 		tip.gameObject.SetActive(false);
 		// 匹配房间
 		System.Action<string> callback = createRoomCB;
+		HttpHelper.HttpHelper.onHttpError = onHttpError;
 		StartCoroutine(HttpHelper.HttpHelper.createRoom(yourName.playerId, yourName.playerName, callback));
 	}
 
@@ -81,7 +90,6 @@ public class lobbyCtrl : MonoBehaviour {
 	public void clearRoomList() {
 		foreach (Transform child in roomList.transform) {
 			if (child.gameObject == itemTemplate) {
-				print("=============");
 				itemTemplate.SetActive(false);
 		    	continue;
 		    }
@@ -101,6 +109,7 @@ public class lobbyCtrl : MonoBehaviour {
 		Button btn = item.transform.Find("btn").GetComponent<Button>();
 		roomName.text = playerName;
 		btn.GetComponentInChildren<Text>().text = "加入";
+		btn.gameObject.SetActive(false);
 		item.SetActive(true);
 	}
 
@@ -115,8 +124,29 @@ public class lobbyCtrl : MonoBehaviour {
 			if (i == 0) {
 				firstItemFlag = true;
 			}
-			addItemToList(x["data"][i]["roomName"].ToString(), x["data"][i]["roomId"].ToString(), firstItemFlag);
+			addItemToList(x["data"][i]["roomName"].ToString(), 
+				x["data"][i]["roomId"].ToString(), 
+				firstItemFlag);
 		}
+	}
+
+	public void gotoMenu(string p) {
+		print("gotoMenu clicked");
+		MasterSceneManager.Instance.LoadNext("menu");
+		yourName.roomId = null;
+	}
+
+	public void quitRoom() {
+		print("playerId: " + yourName.playerId);
+		print("roomId: " + yourName.roomId);
+		if (quitRoomClicked == false) {
+			quitRoomClicked = true;
+		}
+		if (yourName.roomId != null) {
+			System.Action<string> callback = gotoMenu;
+			StartCoroutine(HttpHelper.HttpHelper.delPlayerInRoom(yourName.playerId, yourName.roomId, callback));
+		}
+		gotoMenu(null);
 	}
 	
 	// Update is called once per frame
@@ -125,8 +155,7 @@ public class lobbyCtrl : MonoBehaviour {
         if (deltaTime > 2) {
         	deltaTime = 0;
         	// 匹配房间
-			System.Action<string> callback = createRoomCB;
-			StartCoroutine(HttpHelper.HttpHelper.canStart(yourName.roomId, yourName.playerId, callback));
-        }
+        	if (displayFlag) setTips("正在匹配。。。");
+		}
 	}
 }

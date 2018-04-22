@@ -4,6 +4,8 @@ using UnityEngine;
 using System.Runtime.Serialization;
 using System.IO;
 using LitJson;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace PlayerJson {
 	public class JsonHelper {
@@ -28,7 +30,13 @@ namespace PlayerJson {
 			public bool syncPosFlag;
 			public int index;
 			public bool alive;
+			public Text scoreText;
+			public int score;
 		};
+
+		public static void displayPlayerScore(ref Player p) {
+			p.scoreText.text = "" + p.score;
+		}
 
 		public static double nowTimestamp() {
 			System.TimeSpan t = (System.DateTime.UtcNow - 
@@ -44,12 +52,14 @@ namespace PlayerJson {
 
 
 		public static string animJson(string action, Dictionary<string, Player> playerList, string index) {
-			string ret = System.String.Format("{{'action': '{0}', 'x': {1}, 'y': {2}, 'z': {3}, 'vspeed': {4}, 'power': {5}, 'index': {6}, 'direction': '{7}'}}", action, 
+			string ret = System.String.Format("{{'action': '{0}', 'x': {1}, 'y': {2}, 'z': {3}, 'vspeed': {4}, 'power': {5}, 'index': {6}, 'direction': '{7}', " +
+				"'score': {8}}}", action, 
 				playerList[index].prePlayerPosition.x, playerList[index].prePlayerPosition.y, playerList[index].prePlayerPosition.z,
 				playerList[index].VSpeed,
 				playerList[index].power,
 				playerList[index].currentPlatformIndex,
-				playerList[index].direction);
+				playerList[index].direction,
+				playerList[index].score);
 			//Debug.Log("animJson: " + ret);
 			return ret;
 		}

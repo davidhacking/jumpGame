@@ -7,10 +7,6 @@ using System.Text.RegularExpressions;
 
 public class MenuCtrl : MonoBehaviour {
 
-	public GameObject restartBtn;
-	public GameObject resumeBtn;
-	public GameObject historyBtn;
-
 	float _waitTime = 2f;
 
 	void OnGUI() {
@@ -32,11 +28,8 @@ public class MenuCtrl : MonoBehaviour {
         }
     }
 
-	public void gotoMain() {
-		//Application.LoadLevel("main");
-		print("gotoMain");
-		MasterSceneManager.Instance.mainPause = false;
-		MasterSceneManager.Instance.LoadNext("main");
+	public void quitGame() {
+		Application.Quit();
 	}
 
 	public void gotoPlayMultiMan() {
@@ -44,26 +37,8 @@ public class MenuCtrl : MonoBehaviour {
 		print("gotoPlayMultiMan");
 		MasterSceneManager.Instance.LoadNext("lobby");
 	}
-
-	public void gotoHistory() {
-		MasterSceneManager.Instance.loadScrollView();
-	}
-
-	public void resumeGame() {
-		MasterSceneManager.Instance.resumeMain();
-	}
-
 	// Use this for initialization
 	void Start () {
-		if (MasterSceneManager.Instance.mainPause) {
-			resumeBtn.SetActive(true);
-			restartBtn.GetComponentInChildren<Text>().text = "重新开始";
-			// historyBtn.SetActive(false);
-		} else {
-			resumeBtn.SetActive(false);
-			restartBtn.GetComponentInChildren<Text>().text = "单人跳";
-			// historyBtn.SetActive(true);
-		}
 	}
 	
 	// Update is called once per frame
