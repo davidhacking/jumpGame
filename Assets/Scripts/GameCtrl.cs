@@ -435,14 +435,24 @@ public class GameCtrl : MonoBehaviour
 		}
 	}
 
+	float backBtnClickTime;
+
     public void onBackBtnClick() {
     	stopMusic(pressingAudio);
-		if (gameStatus == GameStatus.PLAY_AGAIN) {
-			print("game ctrl click back LoadPrevious");
-        	MasterSceneManager.Instance.LoadPrevious();
+		if (gameStatus == GameStatus.PLAY_AGAIN ||
+			gameStatus == GameStatus.GAME_OVER ||
+			gameStatus == GameStatus.GAME_WIN) {
+			MasterSceneManager.Instance.LoadNext("menu");
         } else {
-        	print("game ctrl click back pauseMain");
-            MasterSceneManager.Instance.pauseMain();
+        	if (PlayerJson.JsonHelper.nowTimestamp() - backBtnClickTime < 2) {
+        		StartCoroutine(HttpHelper.HttpHelper.syncPlayerStatus(
+        			"{'action': 'game_over'}", 
+        			yourName.roomId, 
+        			playerList[yourName.playerId].playerId));
+        		MasterSceneManager.Instance.LoadNext("menu");
+        	} else {
+        		setTips("双击退出");
+        	}
         }
 	}
 
@@ -551,6 +561,7 @@ public class GameCtrl : MonoBehaviour
 		platformLock = new Object();
 		updateScoreTime = 0;
 		updateLoginTime = 0;
+		backBtnClickTime = 0;
 		syncGameWinFlag = false;
 		System.Action<string> errorCB = onHttpError;
 		HttpHelper.HttpHelper.onHttpError = errorCB;
