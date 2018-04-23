@@ -28,10 +28,13 @@ public class yourName : MonoBehaviour {
 	*/
 	private static readonly string CONF_FILE = "config";
 
-	float _waitTime = 2f;//前后两次按退出间隔时间
-    void OnGUI() {
+	float _waitTime = 2f;
+	void OnGUI() {
         if (_waitTime < 2) {
-            GUI.Label(new Rect(Screen.width / 2 - 100, Screen.height / 2 - 30, 200, 60), "再按一次退出");
+        	GUIStyle guiStyle = new GUIStyle();
+        	guiStyle.fontSize = 70;
+        	guiStyle.normal.textColor = Color.red;
+            GUI.Label(new Rect(Screen.width / 2 - 240, Screen.height / 2 - 50, 200, 100), "再按一次退出", guiStyle);
             _waitTime -= Time.deltaTime;
             if (_waitTime < 0) {
                 _waitTime = 2;

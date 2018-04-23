@@ -228,7 +228,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 261.1}
+  m_SizeDelta: {x: 0, y: 210.8}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &178143817
 MonoBehaviour:
@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.63235295, g: 0.12554066, b: 0.12554066, a: 0.392}
+  m_Color: {r: 0.41911763, g: 0.35440093, b: 0.35440093, a: 0.392}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -361,7 +361,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 312084299}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.7615016
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -433,7 +433,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000066541135}
+  m_AnchoredPosition: {x: -0.000024081784, y: 1.3856485}
   m_SizeDelta: {x: 0, y: 500}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &273317411
@@ -762,6 +762,7 @@ GameObject:
   - component: {fileID: 671917331}
   - component: {fileID: 671917330}
   - component: {fileID: 671917329}
+  - component: {fileID: 671917333}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -848,6 +849,25 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!131 &671917333
+GUITexture:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 671917328}
+  m_Enabled: 1
+  m_Texture: {fileID: 2800000, guid: a39244f42bcd54a4ca79ddd87da5bd96, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.15686275}
+  m_PixelInset:
+    serializedVersion: 2
+    x: -20
+    y: 190
+    width: 1900
+    height: -2200
+  m_LeftBorder: 0
+  m_RightBorder: 0
+  m_TopBorder: 0
+  m_BottomBorder: 0
 --- !u!1 &1028961361
 GameObject:
   m_ObjectHideFlags: 0
@@ -1267,7 +1287,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 384.9, y: 197.9}
+  m_SizeDelta: {x: 384.9, y: 132.9}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1305310807
 MonoBehaviour:
@@ -1649,7 +1669,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1028961363}
   m_HandleRect: {fileID: 1028961362}
   m_Direction: 0
-  m_Value: 0.5
+  m_Value: 1
   m_Size: 0.99999994
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -1841,7 +1861,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 395.4, y: 109.8}
+  m_SizeDelta: {x: 395.4, y: 113.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1634485571
 MonoBehaviour:
@@ -1864,7 +1884,7 @@ MonoBehaviour:
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 80
+    m_FontSize: 70
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -1984,7 +2004,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 388.6, y: 156.3}
+  m_SizeDelta: {x: 388.6, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1823234790
 MonoBehaviour:
@@ -2007,7 +2027,7 @@ MonoBehaviour:
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 80
+    m_FontSize: 70
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -2018,7 +2038,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u623F\u95F4"
+  m_Text: "\u683C\u6597\u95F4"
 --- !u!222 &1823234791
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2092,7 +2112,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u9000\u51FA\u623F\u95F4"
+  m_Text: "\u653E\u5F03\u6218\u6597"
 --- !u!222 &1898661362
 CanvasRenderer:
   m_ObjectHideFlags: 0

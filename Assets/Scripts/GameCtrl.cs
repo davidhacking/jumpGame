@@ -6,7 +6,6 @@ using UnityEngine.Networking;
 using System.Text.RegularExpressions;
 using HttpHelper;
 using PlayerJson;
-using MqHelper;
 
 public class GameCtrl : MonoBehaviour {
 

@@ -184,6 +184,7 @@ GameObject:
   - component: {fileID: 64845837}
   - component: {fileID: 64845836}
   - component: {fileID: 64845840}
+  - component: {fileID: 64845841}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -291,6 +292,25 @@ MonoBehaviour:
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
   m_ChildControlHeight: 0
+--- !u!131 &64845841
+GUITexture:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 64845835}
+  m_Enabled: 1
+  m_Texture: {fileID: 2800000, guid: a39244f42bcd54a4ca79ddd87da5bd96, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.15686275}
+  m_PixelInset:
+    serializedVersion: 2
+    x: -20
+    y: 190
+    width: 1900
+    height: -2200
+  m_LeftBorder: 0
+  m_RightBorder: 0
+  m_TopBorder: 0
+  m_BottomBorder: 0
 --- !u!1 &178185257
 GameObject:
   m_ObjectHideFlags: 0
@@ -340,7 +360,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4F60\u7684\u540D\u5B57"
+  m_Text: "\u52C7\u58EB\u7684\u79F0\u53F7"
 --- !u!222 &178185259
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -397,7 +417,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   iknow: 0
   name: {fileID: 629819349}
-  ip: {fileID: 0}
   tip: {fileID: 633703264}
   go: {fileID: 1761987334}
 --- !u!4 &378653696
@@ -514,7 +533,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u8D70\u4F60\n"
+  m_Text: "\u8E0F\u5411\u5F81\u7A0B"
 --- !u!222 &544287171
 CanvasRenderer:
   m_ObjectHideFlags: 0

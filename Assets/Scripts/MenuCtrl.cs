@@ -13,13 +13,12 @@ public class MenuCtrl : MonoBehaviour {
 	public Button threeManHard;
 
 	float _waitTime = 2f;
-
 	void OnGUI() {
         if (_waitTime < 2) {
         	GUIStyle guiStyle = new GUIStyle();
-        	guiStyle.fontSize = 40;
-        	guiStyle.normal.textColor = new Color(162, 167, 202);
-            GUI.Label(new Rect(Screen.width / 2 - 100, Screen.height / 2 - 30, 200, 100), "", guiStyle);
+        	guiStyle.fontSize = 70;
+        	guiStyle.normal.textColor = Color.red;
+            GUI.Label(new Rect(Screen.width / 2 - 240, Screen.height / 2 - 50, 200, 100), "再按一次退出", guiStyle);
             _waitTime -= Time.deltaTime;
             if (_waitTime < 0) {
                 _waitTime = 2;
@@ -47,7 +46,7 @@ public class MenuCtrl : MonoBehaviour {
 			yourName.roomType = "two_man_easy";
 			Application.LoadLevel("lobby");
 		} else if (id == "three_man_easy") {
-			yourName.roomType = "two_man_easy";
+			yourName.roomType = "three_man_easy";
 			Application.LoadLevel("lobby");
 		} else if (id == "two_man_hard") {
 			yourName.roomType = "two_man_hard";

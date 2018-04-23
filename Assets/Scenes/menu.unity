@@ -976,7 +976,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u53CC\u4EBA\u7B80\u5355\u5339\u914D"
+  m_Text: "\u53CC\u4EBA\u51B3\u6597"
 --- !u!222 &1251568942
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1050,7 +1050,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E09\u4EBA\u56F0\u96BE\u5339\u914D"
+  m_Text: "\u4E09\u4EBA\u56F0\u96BE\u6A21\u5F0F"
 --- !u!222 &1373877519
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1287,7 +1287,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u53CC\u4EBA\u56F0\u96BE\u5339\u914D"
+  m_Text: "\u53CC\u4EBA\u56F0\u96BE\u6A21\u5F0F"
 --- !u!222 &1532826982
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1586,7 +1586,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E09\u4EBA\u7B80\u5355\u5339\u914D"
+  m_Text: "\u4E09\u4EBA\u51B3\u6597"
 --- !u!222 &1957340817
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1604,6 +1604,7 @@ GameObject:
   - component: {fileID: 1980795260}
   - component: {fileID: 1980795259}
   - component: {fileID: 1980795258}
+  - component: {fileID: 1980795262}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1687,3 +1688,22 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!131 &1980795262
+GUITexture:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1980795257}
+  m_Enabled: 1
+  m_Texture: {fileID: 2800000, guid: a39244f42bcd54a4ca79ddd87da5bd96, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.15686275}
+  m_PixelInset:
+    serializedVersion: 2
+    x: -20
+    y: 190
+    width: 1900
+    height: -2200
+  m_LeftBorder: 0
+  m_RightBorder: 0
+  m_TopBorder: 0
+  m_BottomBorder: 0
