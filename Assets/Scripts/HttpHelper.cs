@@ -57,8 +57,10 @@ namespace HttpHelper {
         }
 
         public static IEnumerator updatePlayerStatus(string roomId, string playerId, System.Action<string, string, string> callback) {
-            UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/getPlayerStatus?roomId=" + roomId 
-                + "&playerId=" + playerId + "&myId=" + yourName.playerId);
+            string url = WEB_SERVER_URL + "/getPlayerStatus?roomId=" + roomId 
+                + "&playerId=" + playerId + "&myId=" + yourName.playerId;
+            UnityWebRequest www = UnityWebRequest.Get(url);
+            Debug.Log("getPlayerStatus url: " + url);
             yield return www.Send();
             if (www.isError) {
                 Debug.Log(www.error);
@@ -80,7 +82,7 @@ namespace HttpHelper {
             string url = WEB_SERVER_URL + "/getPlatformStatus?roomId=" + roomId +
                 "&currPlatIndex=" + currPlatIndex + 
                 "&currPlayerIndex=" + currPlayerIndex;
-            //Debug.Log("updatePlatformStatus url: " + url);
+            Debug.Log("getPlatformStatus url: " + url);
             UnityWebRequest www = UnityWebRequest.Get(url);
             yield return www.Send();
             if (www.isError) {
@@ -110,9 +112,14 @@ namespace HttpHelper {
             }
         }
 
-        public static IEnumerator createRoom(string playerId, string playerName, System.Action<string> callback) {
-            Debug.Log("updatePlatformStatus start time: " + PlayerJson.JsonHelper.nowTimestamp().ToString("0.00000"));
-            UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/createRoom?playerId=" + playerId + "&playerName=" + playerName);
+        public static IEnumerator createRoom(string playerId, 
+            string playerName, 
+            string roomType,
+            System.Action<string> callback) {
+            Debug.Log("createRoom start time: " + PlayerJson.JsonHelper.nowTimestamp().ToString("0.00000"));
+            UnityWebRequest www = UnityWebRequest.Get(WEB_SERVER_URL + "/createRoom?playerId=" + playerId 
+                + "&playerName=" + playerName
+                + "&roomType=" + roomType);
             yield return www.Send();
             Debug.Log("time: " + PlayerJson.JsonHelper.nowTimestamp().ToString("0.00000"));
             if (www.isError) {

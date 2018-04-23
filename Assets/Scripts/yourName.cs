@@ -13,6 +13,7 @@ public class yourName : MonoBehaviour {
 	public static string playerName = null;
 	public static string playerId = null;
 	public static string roomId = null;
+	public static string roomType = null;
 	public static List<string> playerList = null;
 	public bool iknow = false;
 

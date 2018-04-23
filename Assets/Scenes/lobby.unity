@@ -361,7 +361,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 312084299}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99988085
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -433,7 +433,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.062655434}
+  m_AnchoredPosition: {x: 0, y: -0.000066541135}
   m_SizeDelta: {x: 0, y: 500}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &273317411
@@ -1722,6 +1722,7 @@ MonoBehaviour:
   itemTemplate: {fileID: 1494221321}
   tip: {fileID: 1110645046}
   title: {fileID: 1823234790}
+  roomTypeText: {fileID: 1634485571}
   bgm: {fileID: 1320400872}
   displayFlag: 1
 --- !u!4 &1468383108
@@ -1863,11 +1864,11 @@ MonoBehaviour:
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 20
+    m_FontSize: 80
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 2
-    m_MaxSize: 40
+    m_MinSize: 0
+    m_MaxSize: 80
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1

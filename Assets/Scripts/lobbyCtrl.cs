@@ -15,8 +15,11 @@ public class lobbyCtrl : MonoBehaviour {
 	public GameObject itemTemplate;
 	public Text tip;
 	public Text title;
+	public Text roomTypeText;
 	public AudioSource bgm;
 	public bool displayFlag = true;
+	// 退出房间点击
+	bool quitRoomClicked;
 
 	float deltaTime;
 
@@ -63,7 +66,11 @@ public class lobbyCtrl : MonoBehaviour {
 		}
 		if (quitRoomClicked == false) {
 			System.Action<string> callback = createRoomCB;
-			StartCoroutine(HttpHelper.HttpHelper.createRoom(yourName.playerId, yourName.playerName, callback));
+			StartCoroutine(HttpHelper.HttpHelper.createRoom(
+				yourName.playerId, 
+				yourName.playerName, 
+				yourName.roomType,
+				callback));
 		}
 	}
 
@@ -71,21 +78,41 @@ public class lobbyCtrl : MonoBehaviour {
 		displayFlag = false;
 		setTips("无法连接服务器");
 		System.Action<string> callback = createRoomCB;
-		StartCoroutine(HttpHelper.HttpHelper.createRoom(yourName.playerId, yourName.playerName, callback));
+		StartCoroutine(HttpHelper.HttpHelper.createRoom(
+				yourName.playerId, 
+				yourName.playerName, 
+				yourName.roomType,
+				callback));
 	}
 
-	bool quitRoomClicked;
+	// 设置房间类型
+	void setRoomTypeText() {
+		if (yourName.roomType == "two_man_easy") {
+			roomTypeText.text = "双人简单";
+		} else if (yourName.roomType == "two_man_hard") {
+			roomTypeText.text = "双人困难";
+		} else if (yourName.roomType == "three_man_easy") {
+			roomTypeText.text = "三人简单";
+		} else if (yourName.roomType == "three_man_hard") {
+			roomTypeText.text = "三人困难";
+		}
+	}
 
 	// Use this for initialization
 	void Start() {
 		playMusic(bgm);
+		setRoomTypeText();
 		deltaTime = 0;
 		quitRoomClicked = false;
 		tip.gameObject.SetActive(false);
 		// 匹配房间
 		System.Action<string> callback = createRoomCB;
 		HttpHelper.HttpHelper.onHttpError = onHttpError;
-		StartCoroutine(HttpHelper.HttpHelper.createRoom(yourName.playerId, yourName.playerName, callback));
+		StartCoroutine(HttpHelper.HttpHelper.createRoom(
+				yourName.playerId, 
+				yourName.playerName, 
+				yourName.roomType,
+				callback));
 	}
 
 	IEnumerator closeTips() {
