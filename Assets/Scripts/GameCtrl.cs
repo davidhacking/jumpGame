@@ -537,7 +537,7 @@ public class GameCtrl : MonoBehaviour
     int isRenew = 0;
 
     public void onHttpError(string httpError) {
-		setTips("服务连接服务器");
+		setTips("无法连接服务器");
 	}
 
 	IEnumerator closeTips() {
@@ -689,10 +689,10 @@ public class GameCtrl : MonoBehaviour
 	float updateScoreTime = 0;
 
 	void updateFunc() {
-		updateLoginTime += Time.fixedDeltaTime;
-		updateScoreTime += Time.fixedDeltaTime;
+		updateLoginTime += Time.deltaTime;
+		updateScoreTime += Time.deltaTime;
 
-        if (updateLoginTime > 2) {
+        if (updateLoginTime > 1) {
         	updateLoginTime = 0;
         	// 匹配房间
         	if (gameStatus != GameStatus.GAME_OVER && gameStatus != GameStatus.PLAY_AGAIN && 

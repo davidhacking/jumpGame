@@ -397,6 +397,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   iknow: 0
   name: {fileID: 629819349}
+  ip: {fileID: 0}
   tip: {fileID: 633703264}
   go: {fileID: 1761987334}
 --- !u!4 &378653696

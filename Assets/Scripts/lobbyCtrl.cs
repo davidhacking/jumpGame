@@ -15,23 +15,34 @@ public class lobbyCtrl : MonoBehaviour {
 	public GameObject itemTemplate;
 	public Text tip;
 	public Text title;
+	public AudioSource bgm;
 	public bool displayFlag = true;
 
 	float deltaTime;
+
+	void playMusic(AudioSource audio) {
+		if (!audio.isPlaying){
+			audio.Play();
+		}
+	}
+
+	void stopMusic(AudioSource audio) {
+		if (audio.isPlaying){
+			audio.Stop();
+		}
+	}
 
 	public void createRoomCB(string ret) {
 		displayFlag = true;
 		LitJson.JsonData x = LitJson.JsonMapper.ToObject(ret);
 		//print("createRoomCB retrun: " + x["return"]);
 		if (x["return"].ToString() == "success" && x["data"] != null) {
-			//print("createRoomCB data: " + x["data"].ToString());
 			title.text = x["data"]["roomId"].ToString() + "号房间";
 			yourName.roomId = x["data"]["roomId"].ToString();
-
 			clearRoomList();
 			yourName.playerList = new List<string>();
 			for (int i = 0; i < x["data"]["playerList"].Count; i++) {
-				//print("i: " + i + "; data: " + x["data"]["playerList"][i]);
+				print("i: " + i + "; data: " + x["data"]["playerList"][i]["playerId"].ToString() + ", " + x["data"]["playerList"][i]["playerName"].ToString());
 				bool firstItemFlag = false;
 				if (i == 0) {
 					firstItemFlag = true;
@@ -42,6 +53,7 @@ public class lobbyCtrl : MonoBehaviour {
 			if (x["data"]["status"].ToString() == "playing") {
 				print("start playing");
 				MasterSceneManager.Instance.LoadNext("main");
+				stopMusic(bgm);
 				return;
 			}
 		} else {
@@ -66,6 +78,7 @@ public class lobbyCtrl : MonoBehaviour {
 
 	// Use this for initialization
 	void Start() {
+		playMusic(bgm);
 		deltaTime = 0;
 		quitRoomClicked = false;
 		tip.gameObject.SetActive(false);
@@ -104,6 +117,10 @@ public class lobbyCtrl : MonoBehaviour {
 		} else {
 			item = Instantiate(itemTemplate);
 			item.transform.SetParent(roomList.transform);
+			item.transform.localPosition = new Vector3(item.transform.localPosition.x,
+				item.transform.localPosition.y,
+				0);
+			item.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 		}
 		Text roomName = item.transform.Find("text").GetComponent<Text>();
 		Button btn = item.transform.Find("btn").GetComponent<Button>();
@@ -133,6 +150,7 @@ public class lobbyCtrl : MonoBehaviour {
 	public void gotoMenu(string p) {
 		print("gotoMenu clicked");
 		MasterSceneManager.Instance.LoadNext("menu");
+		stopMusic(bgm);
 		yourName.roomId = null;
 	}
 

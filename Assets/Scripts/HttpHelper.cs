@@ -12,8 +12,28 @@ namespace HttpHelper {
 
     public class HttpHelper {
 
-    	public static readonly string WEB_SERVER_URL = "http://192.168.45.130:5000";
+    	public static string WEB_SERVER_URL = "http://192.168.45.130:5000";
         public static float waitTime = 0.1f;
+
+        public static IEnumerator hello(string ip, System.Action<string> successCB = null,
+            System.Action<string> failCB = null) {
+            // validate
+            string url = ip + "/hello";
+            UnityWebRequest www = UnityWebRequest.Get(url);
+            Debug.Log("url: " + url);
+            yield return www.Send();
+            if (www.isError) {
+                Debug.Log(www.error);
+                if (failCB != null) {
+                    failCB(www.error.ToString());
+                }
+            } else {
+                Debug.Log(www.downloadHandler.text);
+                if (successCB != null) {
+                    successCB(www.downloadHandler.text);
+                }
+            }
+        }
 
     	public static IEnumerator syncPlayerStatus(string status, string roomId, string playerId, System.Action<string> callback = null) {
         	// validate
