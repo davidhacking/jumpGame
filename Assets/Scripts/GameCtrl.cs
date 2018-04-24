@@ -147,7 +147,11 @@ public class GameCtrl : MonoBehaviour {
 	void displayPlayerLabel(ref PlayerJson.JsonHelper.Player p, string text) {
 		setEnable(ref p);
 		p.playerLabel.transform.position = p.player.transform.position + new Vector3(0, p.player.transform.position.y + 0.4f * p.index, 0);
-		text = text.Length > 5 ? text.Substring(0, 5) : text;
+		if (p.playerId != yourName.playerId) {
+			text = text.Length > 5 ? text.Substring(0, 5) : text;
+		} else {
+			text = "*" + (text.Length > 4 ? text.Substring(0, 4) : text);
+		}
 		p.playerLabelTextMesh.text = text;
 	}
 
@@ -831,9 +835,11 @@ public class GameCtrl : MonoBehaviour {
 			break;
 
 		case GameStatus.PLAY_AGAIN:
+			stopMusic(pressingAudio);
 			playAgainFunc();
 			break;
 		case GameStatus.GAME_WIN:
+			stopMusic(pressingAudio);
 			print("chijichijichijichijichiji");
 			timeText.text = "吃鸡";
 			if (!syncGameWinFlag) {

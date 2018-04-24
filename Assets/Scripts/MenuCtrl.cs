@@ -40,6 +40,11 @@ public class MenuCtrl : MonoBehaviour {
 		return delegate() { gotoPlayMultiMan(id); };
 	}
 
+	public void openUrl() {
+		WWW a = new WWW (HttpHelper.HttpHelper.introduction());  
+    	Application.OpenURL(a.url);  
+	}
+
 	public void gotoPlayMultiMan(string id) {
 		print("gotoPlayMultiMan");
 		if (id == "two_man_easy") {

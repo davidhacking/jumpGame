@@ -35,7 +35,11 @@ namespace PlayerJson {
 		};
 
 		public static void displayPlayerScore(ref Player p) {
-			p.scoreText.text = "" + p.score;
+			if (p.playerId != yourName.playerId) {
+				p.scoreText.text = "" + p.score;
+			} else {
+				p.scoreText.text = "*" + p.score;
+			}
 		}
 
 		public static double nowTimestamp() {

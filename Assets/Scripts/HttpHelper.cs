@@ -14,6 +14,10 @@ namespace HttpHelper {
 
     	public static string WEB_SERVER_URL = "http://192.168.45.130:5000";
         public static float waitTime = 0.1f;
+        // 访问游戏介绍的链接
+        public static string introduction() {
+            return WEB_SERVER_URL + "/html/introduction.html";
+        }
 
         public static IEnumerator hello(string ip, System.Action<string> successCB = null,
             System.Action<string> failCB = null) {
